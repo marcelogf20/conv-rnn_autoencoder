@@ -8,30 +8,31 @@ from imageio import imread, imsave
 import torch
 from torch.autograd import Variable
 import network
-cuda=1
 
-m='./checkpoint/checkpoint_2_4/decoder_iter_000'
-    
-folder='./resultados/resultados_2_4'
+cuda=0
+model ='checkpoint/checkpoint4_2epochs/'
+inputs ='imagens_teste/'
+path_destino='resultados/resultados4_2epochs'
+folder='variaveis2'
 
     
-number_img  = np.load('variaveis/number_img.npy')
-iterations   = np.load('variaveis/iterations.npy')
-number_model = np.load('variaveis/number_model.npy')
+number_img  = np.load(folder+'/number_img.npy')
+iterations   = np.load(folder+'/iterations.npy')
+number_model = np.load(folder+'/number_model.npy')
 
 
 for i in range(number_img,number_img+1):
-    input_npz='./imagens_codificadas/cod_2_4/kodim'+str(number_img)+'_model'+str(number_model)+'_ds_2_4.npz'
+    input_npz='./imagens_codificadas/cod4_2epochs/kodim'+str(number_img)+'_model'+str(number_model)+'_ds_2_4.npz'
  
-    x=(number_model)*1299 +1298
+    x=(number_model)*1298+1298
+ 
     if x< 1000:
-        model=m+'00'+str(x)+'.pth'
+        model=model+'decoder_iter_00000'+str(x)+'.pth'
     elif x< 10000:
-        model=m+'0'+str(x)+'.pth'
-    else:
-        model=m+str(x)+'.pth'
+        model=model+'decoder_iter_0000'+str(x)+'.pth'
+    elif x<100000:
+        model=model+'decoder_iter_000'+str(x)+'.pth'
     
-
     
     decoder = network.DecoderCell()
     decoder.eval()
@@ -63,13 +64,13 @@ for i in range(number_img,number_img+1):
             image = torch.zeros(1, 3, height, width) + 0.5
         
     else:
-        image = torch.load('variaveis/image.pt')
-        codes = torch.load('variaveis/codes.pt')
-        output = torch.load('variaveis/output.pt')
-        decoder_h_1 = torch.load('variaveis/decoder_h_1.pt')
-        decoder_h_2 = torch.load('variaveis/decoder_h_2.pt')
-        decoder_h_3=torch.load('variaveis/decoder_h_3.pt')
-        decoder_h_4=torch.load('variaveis/decoder_h_4.pt')
+        image = torch.load(folder+'/image.pt')
+        codes = torch.load(folder+'/codes.pt')
+        output = torch.load(folder+'/output.pt')
+        decoder_h_1 = torch.load(folder+'/decoder_h_1.pt')
+        decoder_h_2 = torch.load(folder+'/decoder_h_2.pt')
+        decoder_h_3=torch.load(folder+'/decoder_h_3.pt')
+        decoder_h_4=torch.load(folder+'/decoder_h_4.pt')
 
         
 if cuda:
@@ -88,27 +89,27 @@ if cuda:
         output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(
                 codes[iters-1], decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)
         image = image + output.data.cpu()
-    torch.save(image, 'variaveis/image.pt')
-    torch.save(codes, 'variaveis/codes.pt')
-    torch.save(output, 'variaveis/output.pt')
-    torch.save(decoder_h_1, 'variaveis/decoder_h_1.pt')
-    torch.save(decoder_h_2, 'variaveis/decoder_h_2.pt')
-    torch.save(decoder_h_3, 'variaveis/decoder_h_3.pt')
-    torch.save(decoder_h_4, 'variaveis/decoder_h_4.pt')
-    np.save('variaveis/iterations',iterations+passo)
+    torch.save(image,folder+ '/image.pt')
+    torch.save(codes,folder+ '/codes.pt')
+    torch.save(output,folder+ '/output.pt')
+    torch.save(decoder_h_1,folder+ '/decoder_h_1.pt')
+    torch.save(decoder_h_2, folder+'/decoder_h_2.pt')
+    torch.save(decoder_h_3, folder+'/decoder_h_3.pt')
+    torch.save(decoder_h_4, folder+'/decoder_h_4.pt')
+    np.save(folder+'/iterations',iterations+passo)
 
     if iters==16:
-	name_img_out = 'kodim'+str(number_img)+'_model'+str(number_model)+'_iter'
+        name_img_out = 'kodim'+str(number_img)+'_model'+str(number_model)+'_iter'
         print('Modelo:',number_model,'; Imagem:',number_img,'; Iteração:',iters)
-        imageio.imwrite(os.path.join(folder,name_img_out+'{:02d}.bmp'.format(iters)),np.squeeze(image.numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0))
+        imageio.imwrite(os.path.join(path_destino,name_img_out+'{:02d}.bmp'.format(iters)),np.squeeze(image.numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0))
         iterations=1
-        np.save('variaveis/iterations',iterations)
+        np.save(folder+'/iterations',iterations)
         if(number_model==59):
             number_model=0
             number_img+=1
-            np.save('variaveis/number_model',number_model)
-            np.save('variaveis/number_img',number_img)
+            np.save(folder+'/number_model',number_model)
+            np.save(folder+'/number_img',number_img)
         else:
             number_model+=1
-            np.save('variaveis/number_model',number_model)
+            np.save(folder+'/number_model',number_model)
 

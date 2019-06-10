@@ -30,7 +30,7 @@ for i in range(number_img,number_img+1):
         model=model+'encoder_iter_00000'+str(x)+'.pth'
     elif x< 10000:
         model=model+'encoder_iter_0000'+str(x)+'.pth'
-    elif x<100000
+    elif x<100000:
         model=model+'encoder_iter_000'+str(x)+'.pth'
 
 
@@ -111,7 +111,7 @@ for i in range(number_img,number_img+1):
       
     if cuda:
         
-        if iterations > 1
+        if iterations > 1:
             image = image.cuda()
             res = image - 0.5
         

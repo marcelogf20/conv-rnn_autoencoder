@@ -1,7 +1,7 @@
 """" File containing custom operations and layers for keras models """
 
-#import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 
 class Binarize(tf.keras.layers.Layer):
