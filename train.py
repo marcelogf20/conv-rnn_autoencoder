@@ -9,7 +9,7 @@ import torch.optim.lr_scheduler as LS
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import torch.utils.data as data2
+#import torch.utils.data as data2
 #from torchvision import transforms
 import torchvision
 import torchvision.transforms as transforms
@@ -21,13 +21,15 @@ batch_size=32
 data_augmentation =True 
 num_workers=12
 train_path=['DatasetsEduardo/database4']
-
-path_save= ['checkpoint/checkpoint4']
-max_epochs =100
-lr=0.0001
-cuda=True
-iterations=16
-checkpoint=0
+path_save = ['checkpoint/checkpoint4']
+max_epochs = 100
+lr  = 0.0005
+cuda =True
+iterations = 16
+checkpoint = 0
+scheduler_op  = False
+array_milestones=[3, 10, 20, 50, 100]
+fator_gamma=0.5
 
 def transform_data():
     if(data_augmentation):
@@ -46,12 +48,19 @@ def transform_data():
         transforms.ToTensor(),])
     return train_transform
   
+def fuc_scheduler(fator_gamma, array_milestones):
+    scheduler = LS.MultiStepLR(solver, milestones=array_milestones, gamma=fator_gamma)
+    return scheduler 
+
 
 def load_dataset(transform):
     train_dataset = torchvision.datasets.ImageFolder(root=train_path, transform=train_transform)
     print('Total de patches',len(train_dataset))
     train_loader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,num_workers=num_workers,shuffle=True)
     return train_loader
+
+if scheduler_op:
+    scheduler=fuc_scheduler(array_milestones,fator_gamma)
 
 transform = transform_data();
 train_loader=load_dataset(transform)
@@ -64,7 +73,7 @@ binarizer = network.Binarizer().cuda()
 decoder = network.DecoderCell().cuda()
 solver = optim.Adam([{'params': encoder.parameters()},
                      {'params': binarizer.parameters()},
-                     { 'params': decoder.parameters()},],lr=lr)
+                     {'params': decoder.parameters()},],lr=lr)
 
 def resume(epoch=None):
     if epoch is None:
@@ -73,9 +82,9 @@ def resume(epoch=None):
     else:
         s = 'epoch'
 
-    encoder.load_state_dict(torch.load(path_save+'/encoder_{}_{:08d}.pth'.format(s, epoch)))
-    binarizer.load_state_dict(torch.load(path_save+'/binarizer_{}_{:08d}.pth'.format(s, epoch)))
-    decoder.load_state_dict(torch.load(path_save+'/decoder_{}_{:08d}.pth'.format(s, epoch)))
+    encoder.load_state_dict(torch.load(path_save+'/encoder_{}_{}.pth'.format(s, epoch)))
+    binarizer.load_state_dict(torch.load(path_save+'/binarizer_{}_{}.pth'.format(s, epoch)))
+    decoder.load_state_dict(torch.load(path_save+'/decoder_{}_{}.pth'.format(s, epoch)))
 
 
 def save(index, epoch=True):
@@ -91,17 +100,18 @@ def save(index, epoch=True):
     torch.save(decoder.state_dict(), path_save+'/decoder_{}_{}.pth'.format(s, index))
 
 
-scheduler = LS.MultiStepLR(solver, milestones=[3, 10, 20, 50, 100], gamma=0.5)
 last_epoch = 0
 if checkpoint:
     resume(checkpoint)
     last_epoch = checkpoint
-    scheduler.last_epoch = last_epoch - 1
+    if scheduler_op:
+        scheduler.last_epoch = last_epoch - 1
 loss_old = 1
 save_loss=[]
 loss_atual=[]
 for epoch in range(last_epoch + 1, max_epochs + 1):
-    scheduler.step()
+    if scheduler_op:
+        scheduler.step()
     for batch, data in enumerate(train_loader):
         batch_t0 = time.time()
         ## init lstm state
