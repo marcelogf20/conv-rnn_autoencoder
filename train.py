@@ -16,18 +16,20 @@ import torchvision.transforms as transforms
 import dataset
 import sys
 import network
-
+import PIL
 batch_size=32  
+
+train_path='DatasetsEduardo/database4'
+path_save = 'checkpoint/checkpoint4'
 data_augmentation =True 
 num_workers=12
-train_path=['DatasetsEduardo/database4']
-path_save = ['checkpoint/checkpoint4']
+
 max_epochs = 100
 lr  = 0.0005
 cuda =True
 iterations = 16
-checkpoint = 0
-scheduler_op  = False
+checkpoint = 16
+scheduler_op  = True
 array_milestones=[3, 10, 20, 50, 100]
 fator_gamma=0.5
 
@@ -48,22 +50,21 @@ def transform_data():
         transforms.ToTensor(),])
     return train_transform
   
-def fuc_scheduler(fator_gamma, array_milestones):
+def fuc_scheduler(solver, array_milestones,fator_gamma):
     scheduler = LS.MultiStepLR(solver, milestones=array_milestones, gamma=fator_gamma)
     return scheduler 
 
 
-def load_dataset(transform):
+def load_dataset(train_transform):
     train_dataset = torchvision.datasets.ImageFolder(root=train_path, transform=train_transform)
     print('Total de patches',len(train_dataset))
     train_loader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,num_workers=num_workers,shuffle=True)
     return train_loader
 
-if scheduler_op:
-    scheduler=fuc_scheduler(array_milestones,fator_gamma)
 
-transform = transform_data();
-train_loader=load_dataset(transform)
+
+train_transform = transform_data();
+train_loader=load_dataset(train_transform)
              
 print('Total de batches:',len(train_loader))
 ## load networks on GPU
@@ -75,13 +76,15 @@ solver = optim.Adam([{'params': encoder.parameters()},
                      {'params': binarizer.parameters()},
                      {'params': decoder.parameters()},],lr=lr)
 
+if scheduler_op:
+    scheduler=fuc_scheduler(solver,array_milestones,fator_gamma)
+
 def resume(epoch=None):
     if epoch is None:
         s = 'iter'
         epoch = 0
     else:
         s = 'epoch'
-
     encoder.load_state_dict(torch.load(path_save+'/encoder_{}_{}.pth'.format(s, epoch)))
     binarizer.load_state_dict(torch.load(path_save+'/binarizer_{}_{}.pth'.format(s, epoch)))
     decoder.load_state_dict(torch.load(path_save+'/decoder_{}_{}.pth'.format(s, epoch)))
@@ -94,7 +97,6 @@ def save(index, epoch=True):
         s = 'epoch'
     else:
         s = 'iter'
-
     torch.save(encoder.state_dict(),path_save+'/encoder_{}_{}.pth'.format(s, index))
     torch.save(binarizer.state_dict(),path_save+'/binarizer_{}_{}.pth'.format(s, index))
     torch.save(decoder.state_dict(), path_save+'/decoder_{}_{}.pth'.format(s, index))
@@ -110,6 +112,7 @@ loss_old = 1
 save_loss=[]
 loss_atual=[]
 for epoch in range(last_epoch + 1, max_epochs + 1):
+    print('época',epoch)
     if scheduler_op:
         scheduler.step()
     for batch, data in enumerate(train_loader):
