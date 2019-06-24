@@ -9,30 +9,28 @@ import torch
 from torch.autograd import Variable
 import network
 
-cuda=0
-model ='checkpoint/checkpoint4_2epochs/'
-inputs ='imagens_teste/'
-path_destino='resultados/resultados4_2epochs'
-folder='variaveis2'
+cuda=1
+model ='checkpoint/checkpoint4/'
+path_destino='resultados/resultados4'
+folder='variaveis'
 
     
 number_img  = np.load(folder+'/number_img.npy')
 iterations   = np.load(folder+'/iterations.npy')
 number_model = np.load(folder+'/number_model.npy')
 
+for i in range(number_img,number_img+1):   
+    input_npz='./imagens_codificadas/cod4/kodim'+str(number_img)+'_epoch'+str(number_model)+'_ds4.npz'
 
-for i in range(number_img,number_img+1):
-    input_npz='./imagens_codificadas/cod4_2epochs/kodim'+str(number_img)+'_model'+str(number_model)+'_ds_2_4.npz'
- 
-    x=(number_model)*1298+1298
- 
-    if x< 1000:
-        model=model+'decoder_iter_00000'+str(x)+'.pth'
-    elif x< 10000:
-        model=model+'decoder_iter_0000'+str(x)+'.pth'
-    elif x<100000:
-        model=model+'decoder_iter_000'+str(x)+'.pth'
-    
+    #x=(number_model)*1298+1298
+    #if x< 1000:
+    #    model=model+'encoder_iter_00000'+str(x)+'.pth'
+    #elif x< 10000:
+    #    model=model+'encoder_iter_0000'+str(x)+'.pth'
+    #elif x<100000:
+    #    model=model+'encoder_iter_000'+str(x)+'.pth'
+    model=model+'decoder_epoch_'+str(number_model)+'.pth'
+
     
     decoder = network.DecoderCell()
     decoder.eval()
@@ -81,14 +79,18 @@ if cuda:
     decoder_h_3 = (decoder_h_3[0].cuda(), decoder_h_3[1].cuda())
     decoder_h_4 = (decoder_h_4[0].cuda(), decoder_h_4[1].cuda())    
 
-    passo=5 
-    if iterations==11:
-        passo=6
+    passo=4 
+    #if iterations==16:
+    #    passo=1
 
     for iters in range(iterations,iterations+passo):
         output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(
                 codes[iters-1], decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)
         image = image + output.data.cpu()
+        #name_img_out = 'kodim'+str(number_img)+'_epoch'+str(number_model)+'_iter'
+        #imageio.imwrite(os.path.join(path_destino,name_img_out+'{}.bmp'.format(iters)),np.squeeze(image.numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0))
+
+
     torch.save(image,folder+ '/image.pt')
     torch.save(codes,folder+ '/codes.pt')
     torch.save(output,folder+ '/output.pt')
@@ -99,13 +101,13 @@ if cuda:
     np.save(folder+'/iterations',iterations+passo)
 
     if iters==16:
-        name_img_out = 'kodim'+str(number_img)+'_model'+str(number_model)+'_iter'
+        name_img_out = 'kodim'+str(number_img)+'_epoch'+str(number_model)+'_iter'
         print('Modelo:',number_model,'; Imagem:',number_img,'; Iteração:',iters)
         imageio.imwrite(os.path.join(path_destino,name_img_out+'{:02d}.bmp'.format(iters)),np.squeeze(image.numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0))
         iterations=1
         np.save(folder+'/iterations',iterations)
-        if(number_model==59):
-            number_model=0
+        if(number_model==17):
+            number_model=17
             number_img+=1
             np.save(folder+'/number_model',number_model)
             np.save(folder+'/number_img',number_img)

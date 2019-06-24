@@ -2,41 +2,39 @@ import argparse
 
 import numpy as np
 from scipy.misc import imread, imresize, imsave
-
+import pickle
 import torch
 from torch.autograd import Variable
+import network
 
 
-
-model ='checkpoint/checkpoint4_2epochs/'
+model ='checkpoint/checkpoint4/'
 inputs ='imagens_teste/'
-path_destino= 'imagens_codificadas/cod4_2epochs/'
+path_destino= 'imagens_codificadas/cod4/'
 #iterations=16
-cuda=0
+cuda=1
 
 number_img   = np.load('variaveis/number_img.npy')
 iterations   = np.load('variaveis/iterations.npy')
 number_model = np.load('variaveis/number_model.npy')
 
-for i in range(number_img,number_img+1):   
 
+for i in range(number_img,number_img+1):   
+    
     if i<10:
         input_img =inputs+'kodim0'+str(i)+'.bmp'
     else:
         input_img =inputs+'kodim'+str(i)+'.bmp'
 
-    x=(number_model)*1298+1298
-    if x< 1000:
-        model=model+'encoder_iter_00000'+str(x)+'.pth'
-    elif x< 10000:
-        model=model+'encoder_iter_0000'+str(x)+'.pth'
-    elif x<100000:
-        model=model+'encoder_iter_000'+str(x)+'.pth'
-
-
-
-    
-    image = imread(input_img, pilmode='RGB')
+    #x=(number_model)*1298+1298
+    #if x< 1000:
+    #    model=model+'encoder_iter_00000'+str(x)+'.pth'
+    #elif x< 10000:
+    #    model=model+'encoder_iter_0000'+str(x)+'.pth'
+    #elif x<100000:
+    #    model=model+'encoder_iter_000'+str(x)+'.pth'
+    model=model+'encoder_epoch_'+str(number_model)+'.pth'
+    image = imread(input_img, mode='RGB')
     image = torch.from_numpy(
         np.expand_dims(
             np.transpose(image.astype(np.float32) / 255.0, (2, 0, 1)), 0))
@@ -109,9 +107,8 @@ for i in range(number_img,number_img+1):
 
                          
       
-    if cuda:
-        
-        if iterations > 1:
+    if cuda:        
+        if iterations == 1:
             image = image.cuda()
             res = image - 0.5
         
@@ -126,14 +123,14 @@ for i in range(number_img,number_img+1):
         decoder_h_2 = (decoder_h_2[0].cuda(), decoder_h_2[1].cuda())
         decoder_h_3 = (decoder_h_3[0].cuda(), decoder_h_3[1].cuda())
         decoder_h_4 = (decoder_h_4[0].cuda(), decoder_h_4[1].cuda())    
-    
-        
-    passo=5
-    if iterations==11:
-        passo=6
+    passo=4
+    #if iterations==16:
+    #    passo=1
     for iters in range(iterations,iterations+passo):
+            
         encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(
             res, encoder_h_1, encoder_h_2, encoder_h_3)
+        #print(encoded.shape)
         code = binarizer(encoded)
 
         output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(
@@ -141,18 +138,16 @@ for i in range(number_img,number_img+1):
 
         res = res - output
         codes.append(code.data.cpu().numpy())
-
-
-    torch.save(encoded, 'variaveis/encoded.pt')
-    torch.save(encoder_h_1, 'variaveis/encoder_h_1.pt')
-    torch.save(encoder_h_2, 'variaveis/encoder_h_2.pt')
-    torch.save(encoder_h_3, 'variaveis/encoder_h_3.pt')
-    torch.save(res, 'variaveis/res.pt')
-    torch.save(output, 'variaveis/output.pt')
-    torch.save(decoder_h_1, 'variaveis/decoder_h_1.pt')
-    torch.save(decoder_h_2, 'variaveis/decoder_h_2.pt')
-    torch.save(decoder_h_3, 'variaveis/decoder_h_3.pt')
-    torch.save(decoder_h_4, 'variaveis/decoder_h_4.pt')
+    torch.save(encoded,'variaveis/encoded.pt')
+    torch.save(encoder_h_1,'variaveis/encoder_h_1.pt')
+    torch.save(encoder_h_2,'variaveis/encoder_h_2.pt')
+    torch.save(encoder_h_3,'variaveis/encoder_h_3.pt')
+    torch.save(res,'variaveis/res.pt')
+    torch.save(output,'variaveis/output.pt')
+    torch.save(decoder_h_1,'variaveis/decoder_h_1.pt')
+    torch.save(decoder_h_2,'variaveis/decoder_h_2.pt')
+    torch.save(decoder_h_3,'variaveis/decoder_h_3.pt')
+    torch.save(decoder_h_4,'variaveis/decoder_h_4.pt')
     with open("variaveis/codes.txt", "wb") as fp:   #Pickling
         pickle.dump(codes, fp)
     np.save('variaveis/iterations',iterations+passo)
@@ -161,13 +156,13 @@ for i in range(number_img,number_img+1):
         print('Img: {}; Model {}; Iter: {:02d}; Loss: {:.06f}'.format(number_img, number_model,iters, res.data.abs().mean()))
         codes = (np.stack(codes).astype(np.int8) + 1) // 2
         export = np.packbits(codes.reshape(-1))
-        name_cod =path_destino+'kodim'+str(number_img)+'_model'+str(number_model)+'_ds_2_4.npz'
+        name_cod =path_destino+'kodim'+str(number_img)+'_epoch'+str(number_model)+'_ds4.npz'
 
         np.savez_compressed(str(name_cod), shape=codes.shape, codes=export)
         iterations=1
         np.save('variaveis/iterations',iterations)
-        if(number_model==59):
-            number_model=0
+        if(number_model==16):
+            number_model=16
             number_img+=1
             np.save('variaveis/number_model',number_model)
             np.save('variaveis/number_img',number_img)
@@ -176,5 +171,4 @@ for i in range(number_img,number_img+1):
             np.save('variaveis/number_model',number_model)
     
  
-
 
