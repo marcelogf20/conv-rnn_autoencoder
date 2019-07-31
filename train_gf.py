@@ -28,6 +28,28 @@ class Loss():
     crossentropy = 2
     
 
+batch_size=32  
+train_path='/media/data/Datasets/Samsung/database4'
+path_save = '/media/data/Datasets/Samsung/modelos/cp4_mse_32iter_gain'
+data_aug =False 
+num_workers=5
+
+max_epochs = 4
+lr  = 0.0005
+cuda =True
+iterations = 16
+checkpoint = False
+scheduler_op  = False
+array_milestones=[3, 10, 20, 50, 100]
+fator_gamma=0.5
+loss_op = Loss.mse
+n_batches_save = 0 
+stop_learning = 3   #numbers os epochs
+loss_old = 1
+otimizador_op =Otimizador.adam
+last_epoch = 0
+
+
 def transform_data():       
     train_transform = transforms.Compose([
     transforms.RandomCrop((32, 32)),
@@ -92,7 +114,6 @@ def resume(epoch=None):
     binarizer.load_state_dict(torch.load(path_save+'/binarizer_{}_{}.pth'.format(s, epoch)))
     decoder.load_state_dict(torch.load(path_save+'/decoder_{}_{}.pth'.format(s, epoch)))
     solver.load_state_dict(torch.load(path_save+'/solver_{}_{}.pth'.format(s, epoch)))
-    solver.load_state_dict(torch.load(path_save+'/gain_{}_{}.pth'.format(s, epoch)))
 
 
 def save(index, epoch=True):
@@ -107,27 +128,6 @@ def save(index, epoch=True):
     torch.save(decoder.state_dict(), path_save+'/decoder_{}_{}.pth'.format(s, index))
     torch.save(solver.state_dict(), path_save+'/solver_{}_{}.pth'.format(s, index))
     torch.save(gain.state_dict(), path_save+'/gain_{}_{}.pth'.format(s, index))
-
-
-batch_size=32  
-train_path='/media/data/Datasets/Samsung/database4'
-path_save = '/media/data/Datasets/Samsung/modelos/cp4_mse_32iter_gain'
-data_aug =False 
-num_workers=5
-max_epochs = 4
-lr  = 0.0005
-cuda =True
-iterations = 16
-checkpoint = False
-scheduler_op  = False
-array_milestones=[3, 10, 20, 50, 100]
-fator_gamma=0.5
-loss_op = Loss.mse
-n_batches_save = 0 
-stop_learning = 3   #numbers os epochs
-loss_old = 1
-otimizador_op =Otimizador.adam
-last_epoch = 0
 
 
 train_transform = transform_data();
@@ -149,7 +149,6 @@ if checkpoint:
 
 save_loss=[]
 loss_atual=[]
-
 
 for epoch in range(last_epoch + 1, max_epochs + 1):
     print('época: ',epoch)
@@ -184,7 +183,6 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         solver.zero_grad()
         losses = []
         res = patches - 0.5
-        x=res
         bp_t0 = time.time()
         g=1
         ganhos=[]
@@ -194,14 +192,11 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             res_gain = g*res
             encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(res_gain, encoder_h_1, encoder_h_2, encoder_h_3)
             codes = binarizer(encoded)
-            output_gain, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(codes, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)       
+            output_gain, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(codes, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)
             output = output_gain/g 
   
-            #res = res - output
-            
+            res = res - output
             xt += output
-            res = x - xt
-         
             g = gain(xt)[0].data.item()
             ganhos.append(g)
 
@@ -218,13 +213,15 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         loss_atual.append(loss.data.item())
  
         print('[TRAIN] Epoch[{}]({}/{}); Loss: {:.6f}; Backpropagation: {:.4f} sec; Batch: {:.4f} sec'.format(epoch,batch + 1,len(train_loader), loss.data.item(), bp_t1 - bp_t0, batch_t1 - batch_t0))
-        #print(('{:.4f} ' * iterations +'\n').format(* [l.data.item() for l in losses]))
+        print(('{:.4f} ' * iterations +'\n').format(* [l.data.item() for l in losses]))
         print('Ganhos iterações 1, 8 e 16: ',ganhos[0],' ',ganhos[7],' ',ganhos[15])
-        if index==10:
-          sys.exit();
+
     save_loss.append(np.mean(loss_atual))
     np.save('losses',save_loss)
     save(epoch)
+
+
+
 
 
 
