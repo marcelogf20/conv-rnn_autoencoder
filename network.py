@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from modules import ConvLSTMCell, Sign
 
 
+
 class EncoderCell(nn.Module):
     def __init__(self):
         super(EncoderCell, self).__init__()
@@ -149,3 +150,29 @@ class DecoderCell(nn.Module):
 
         x = torch.tanh(self.conv2(x)) / 2
         return x, hidden1, hidden2, hidden3, hidden4
+
+
+class GainFactor(nn.Module):
+    def __init__(self):
+        super(GainFactor, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=2,padding=1,  bias=True)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3,stride=2,padding=1,  bias=True)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, stride=2,padding=1,  bias=True)
+        self.conv4 = nn.Conv2d(32, 32, kernel_size=3, stride=2,padding=1,  bias=True)
+        self.conv5 = nn.Conv2d(32, 1, kernel_size=2, stride=2,padding=0,  bias=True)
+                 
+
+    def forward(self, input):
+        g = self.conv1(input)
+        g = F.elu(g)
+        g = self.conv2(g)
+        g = F.elu(g)
+        g = self.conv3(g)
+        g = F.elu(g)
+        g = self.conv4(g)
+        g = F.elu(g)
+        g = self.conv5(g)
+        g = F.elu(g)
+        g=g+2
+        return g
+

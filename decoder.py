@@ -10,17 +10,17 @@ from torch.autograd import Variable
 import network
 
 cuda=1
-model ='checkpoint/checkpoint4/'
-path_destino='resultados/resultados4'
+model ='/media/data/Datasets/samsung/modelos/rnn/cp4_masc/'
+path_destino='/media/data/Datasets/samsung/resultados/r4_masc'
 folder='variaveis'
-
+path_cod = 'imagens_codificadas/cp4_masc/kodim'
     
 number_img  = np.load(folder+'/number_img.npy')
 iterations   = np.load(folder+'/iterations.npy')
 number_model = np.load(folder+'/number_model.npy')
 
 for i in range(number_img,number_img+1):   
-    input_npz='./imagens_codificadas/cod4/kodim'+str(number_img)+'_epoch'+str(number_model)+'_ds4.npz'
+    input_npz= path_cod+str(number_img)+'_epoch'+str(number_model)+'_ds4.npz'
 
     #x=(number_model)*1298+1298
     #if x< 1000:
@@ -79,7 +79,7 @@ if cuda:
     decoder_h_3 = (decoder_h_3[0].cuda(), decoder_h_3[1].cuda())
     decoder_h_4 = (decoder_h_4[0].cuda(), decoder_h_4[1].cuda())    
 
-    passo=4 
+    passo=1
     #if iterations==16:
     #    passo=1
 
@@ -114,4 +114,3 @@ if cuda:
         else:
             number_model+=1
             np.save(folder+'/number_model',number_model)
-

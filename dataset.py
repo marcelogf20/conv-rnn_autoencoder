@@ -7,6 +7,7 @@ import torch
 from torchvision import transforms
 import torch.utils.data as data
 from PIL import Image
+import glob
 
 IMG_EXTENSIONS = [
     '.jpg',
@@ -69,3 +70,20 @@ class ImageFolder(data.Dataset):
 
     def __len__(self):
         return len(self.imgs)
+
+
+class BSDS500Crop128(data.Dataset):
+    def __init__(self, folder_path,train_transform):
+        self.files = sorted(glob.glob('%s/*.*' % folder_path))
+        self.train_transform = train_transform
+
+    def __getitem__(self, index):
+        path = self.files[index % len(self.files)]
+        img = Image.open(path)
+        rgb = np.array(img, dtype=np.uint8)
+        yuv =  self.train_transform(yuv)
+
+        return yuv
+
+    def __len__(self):
+        return len(self.file)

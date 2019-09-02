@@ -8,9 +8,9 @@ from torch.autograd import Variable
 import network
 
 
-model ='checkpoint/checkpoint4/'
+model ='/media/data/Datasets/samsung/modelos/rnn'
 inputs ='imagens_teste/'
-path_destino= 'imagens_codificadas/cod4/'
+path_destino= '/home/marcelo/rnn-autoencoder/imagens_codificadas/cp4_masc'
 #iterations=16
 cuda=1
 
@@ -61,8 +61,8 @@ for i in range(number_img,number_img+1):
             encoder_h_3 = torch.load('variaveis/encoder_h_3.pt')
             decoder_h_1 = torch.load('variaveis/decoder_h_1.pt')
             decoder_h_2 = torch.load('variaveis/decoder_h_2.pt')
-            decoder_h_3=torch.load('variaveis/decoder_h_3.pt')
-            decoder_h_4=torch.load('variaveis/decoder_h_4.pt')
+            decoder_h_3 = torch.load('variaveis/decoder_h_3.pt')
+            decoder_h_4 = torch.load('variaveis/decoder_h_4.pt')
        
         with open("variaveis/codes.txt", "rb") as fp:   # Unpickling
             codes = pickle.load(fp)
@@ -75,35 +75,21 @@ for i in range(number_img,number_img+1):
         codes = []
         res = image - 0.5
         with torch.no_grad():  
-            encoder_h_1 = (Variable(
-                    torch.zeros(batch_size, 256, height // 4, width // 4)),
-                               Variable(
-                                   torch.zeros(batch_size, 256, height // 4, width // 4)))
-            encoder_h_2 = (Variable(
-                    torch.zeros(batch_size, 512, height // 8, width // 8)),
-                               Variable(
-                                   torch.zeros(batch_size, 512, height // 8, width // 8)))
-            encoder_h_3 = (Variable(
-                    torch.zeros(batch_size, 512, height // 16, width // 16)),
-                               Variable(
-                                   torch.zeros(batch_size, 512, height // 16, width // 16)))
+            encoder_h_1 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4)),
+                               Variable(torch.zeros(batch_size, 256, height // 4, width // 4)))
+            encoder_h_2 = (Variable(torch.zeros(batch_size, 512, height // 8, width // 8)),
+                               Variable(torch.zeros(batch_size, 512, height // 8, width // 8)))
+            encoder_h_3 = (Variable(torch.zeros(batch_size, 512, height // 16, width // 16)),
+                               Variable(torch.zeros(batch_size, 512, height // 16, width // 16)))
 
-            decoder_h_1 = (Variable(
-                    torch.zeros(batch_size, 512, height // 16, width // 16)),
-                               Variable(
-                                   torch.zeros(batch_size, 512, height // 16, width // 16)))
-            decoder_h_2 = (Variable(
-                    torch.zeros(batch_size, 512, height // 8, width // 8)),
-                               Variable(
-                                   torch.zeros(batch_size, 512, height // 8, width // 8)))
-            decoder_h_3 = (Variable(
-                    torch.zeros(batch_size, 256, height // 4, width // 4)),
-                               Variable(
-                                   torch.zeros(batch_size, 256, height // 4, width // 4)))
-            decoder_h_4 = (Variable(
-                    torch.zeros(batch_size, 128, height // 2, width // 2)),
-                               Variable(
-                                   torch.zeros(batch_size, 128, height // 2, width // 2)))
+            decoder_h_1 = (Variable(torch.zeros(batch_size, 512, height // 16, width // 16)),
+                               Variable(torch.zeros(batch_size, 512, height // 16, width // 16)))
+            decoder_h_2 = (Variable(torch.zeros(batch_size, 512, height // 8, width // 8)),
+                               Variable(torch.zeros(batch_size, 512, height // 8, width // 8)))
+            decoder_h_3 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4)),
+                               Variable(torch.zeros(batch_size, 256, height // 4, width // 4)))
+            decoder_h_4 = (Variable(torch.zeros(batch_size, 128, height // 2, width // 2)),
+                               Variable(torch.zeros(batch_size, 128, height // 2, width // 2)))
 
                          
       
