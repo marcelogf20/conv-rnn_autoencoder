@@ -1,12 +1,9 @@
 
 
 num_img = '*'
-
 path_save = 'kodim'+str(num_img)+'_reconstruida.png'
-
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
 #path_model = '/media/data/Datasets/samsung/modelos/rnn/mse_rgb_adam_offeset08/encoder_epoch_1.pth'
-
 path_model = '/media/data/Datasets/samsung/modelos/rnn/adam_msergb_patches/encoder_epoch_1.pth'
 path_destino = 'resultados'
 
@@ -14,14 +11,10 @@ offset = 0.5
 input_channels = 3
 size_patch = 32
 batch_size = 4
-
 target_psnr = 25
-
 min_iters = 1
 qiters = 16
-
 colorspace_input = 'RGB'
-
 height = size_patch
 width  = size_patch
 cuda = 1
@@ -205,13 +198,7 @@ class Manipulation_Images():
             
       
 class Encoder_Decoder():
-    def __init__(self,list_patches,path_model,path_destino, batch_size,op_bit_allocation,cuda,qiters,
-<<<<<<< HEAD
-                 target, height,width,h,w,min_iters,color_mode):
-=======
-                 threshold, height,width,h,w,k_priming):
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
-      
+    def __init__(self,list_patches,path_model,path_destino, batch_size,op_bit_allocation,cuda,qiters,target, height,width,h,w,min_iters,color_mode):
         self.list_patches=list_patches
         self.path_model = path_model
         self.path_destino = path_destino
@@ -224,17 +211,10 @@ class Encoder_Decoder():
         self.width=width
         self.h=h
         self.w =w
-<<<<<<< HEAD
         self.min_iters = min_iters
         self.color_mode = color_mode
-=======
-        self.k_priming = k_priming
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
-    
       
     def ed_process(self,my_object):
-<<<<<<< HEAD
-
         bpp=[]
         code_img = []
         th =self.target
@@ -250,25 +230,10 @@ class Encoder_Decoder():
         decoder.load_state_dict(torch.load(self.path_model.replace('encoder', 'decoder'),map_location=lambda storage, loc: storage))
 
         if cuda:
-=======
-        bpp=[]
-        #for th in self.threshold:
-        for q in range(self.qiters, self.qiters+1):
-            train_loader = torch.utils.data.DataLoader(self.list_patches,batch_size = self.batch_size,num_workers=2,
-                                                       shuffle=False)
-            num_batch = len(train_loader)
-            encoder = network.EncoderCell()
-            binarizer = network.Binarizer()
-            decoder = network.DecoderCell()
-            encoder.load_state_dict(torch.load(self.path_model,map_location=lambda storage, loc: storage ) )
-            binarizer.load_state_dict(torch.load(self.path_model.replace('encoder', 'binarizer'),map_location=lambda storage, loc: storage ))
-            decoder.load_state_dict(torch.load(self.path_model.replace('encoder', 'decoder'),map_location=lambda storage, loc: storage))
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
             encoder = encoder.cuda()
             binarizer = binarizer.cuda()
             decoder = decoder.cuda()
 
-<<<<<<< HEAD
         qbits=np.zeros(1)
         im=0
         list_patches_recons = np.zeros((self.batch_size*num_batch,self.height,self.width,3),dtype='uint8' )
@@ -310,38 +275,6 @@ class Encoder_Decoder():
             decoder_h_4 = (decoder_h_4[0], decoder_h_4[1])  
 
             if cuda:
-=======
-            qbits=np.zeros((self.qiters),dtype='float64')
-            im=0
-            list_patches_recons = np.zeros((self.qiters,self.batch_size*num_batch,self.height,self.width,3),dtype='uint8' )
-         
-
-            for batch,data in enumerate(train_loader):
-                image = data.cuda()
-                codes_final=[]
-                assert height % 32 == 0 and width % 32 == 0
-                with torch.no_grad():
-                    image = Variable(image)
-                res   = image - 0.5
-                codes = []
-
-                with torch.no_grad():  
-                    encoder_h_1 = ((torch.zeros(self.batch_size, 256, self.height // 4, self.width // 4)),
-                                      (torch.zeros(self.batch_size, 256, self.height // 4, self.width // 4)))
-                    encoder_h_2 = ((torch.zeros(self.batch_size, 512, self.height // 8, self.width // 8)),
-                                         (torch.zeros(self.batch_size, 512, self.height // 8, self.width // 8)))
-                    encoder_h_3 = ((torch.zeros(self.batch_size, 512, self.height // 16, self.width // 16)),
-                                         (torch.zeros(self.batch_size, 512, self.height // 16, self.width // 16)))
-                    decoder_h_1 = ((torch.zeros(self.batch_size, 512, self.height // 16, self.width // 16)),
-                                         (torch.zeros(self.batch_size, 512, self.height // 16, self.width // 16)))
-                    decoder_h_2 = ((torch.zeros(self.batch_size, 512, self.height // 8, self.width // 8)),
-                                         (torch.zeros(self.batch_size, 512, self.height // 8, self.width // 8)))
-                    decoder_h_3 = ((torch.zeros(self.batch_size, 256, self.height // 4, self.width // 4)),
-                                         (torch.zeros(self.batch_size, 256, self.height // 4, self.width // 4)))
-                    decoder_h_4 = ((torch.zeros(self.batch_size, 128, self.height // 2, self.width // 2)),
-                                         (torch.zeros(self.batch_size, 128, self.height // 2, self.width // 2)))
-
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
                 encoder_h_1 = (encoder_h_1[0].cuda(), encoder_h_1[1].cuda())
                 encoder_h_2 = (encoder_h_2[0].cuda(), encoder_h_2[1].cuda())
                 encoder_h_3 = (encoder_h_3[0].cuda(), encoder_h_3[1].cuda())
@@ -351,7 +284,6 @@ class Encoder_Decoder():
                 decoder_h_3 = (decoder_h_3[0].cuda(), decoder_h_3[1].cuda())
                 decoder_h_4 = (decoder_h_4[0].cuda(), decoder_h_4[1].cuda())    
 
-<<<<<<< HEAD
             im = torch.zeros(batch_size, 3, self.height, self.width) + offset
             res=res.float()
             result=0
@@ -367,67 +299,6 @@ class Encoder_Decoder():
                 res = res - output
                 codes.append(code.data.cpu().numpy())
                 qbits+= (self.height/16*self.width/16 * 32)*self.batch_size 
-                #print('Número do batch', batch+1,'número da iteração', iters+1)
-                #print('Quantidade adicionada de bpp', (self.height/16*self.width/16 * 32)*self.batch_size /(768*512))
-                #print('Quantidade acumulada de bpp',qbits/(768*512))
-=======
-                im = torch.zeros(batch_size, 3, self.height, self.width) + 0.5
-                res=res.float()
-                result=0
-                res_priming = res
-
-                
-                for j in range(k_priming): 
-                    encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(res_priming, encoder_h_1, encoder_h_2, encoder_h_3)
-                    code = binarizer(encoded)
-                    output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(code, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)
-                    #res_priming = res_priming -output
-                encoder_h_1 = (encoder_h_1[0].cuda(), encoder_h_1[1].cuda())
-                encoder_h_2 = (encoder_h_2[0].cuda(), encoder_h_2[1].cuda())
-                encoder_h_3 = (encoder_h_3[0].cuda(), encoder_h_3[1].cuda())
-
-                decoder_h_1 = (decoder_h_1[0].cuda(), decoder_h_1[1].cuda())
-                decoder_h_2 = (decoder_h_2[0].cuda(), decoder_h_2[1].cuda())
-                decoder_h_3 = (decoder_h_3[0].cuda(), decoder_h_3[1].cuda())
-                decoder_h_4 = (decoder_h_4[0].cuda(), decoder_h_4[1].cuda())      
-                
-
-                for iters in range(self.qiters):
-                    encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(res, encoder_h_1, encoder_h_2, encoder_h_3)
-                    code = binarizer(encoded)
-                    #code[code==-1]=0
-                    #print(code)                 
-
-                    output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(code, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)
-
-                    im+=output.data.cpu()
-                    res = res - output
-                    codes.append(code.data.cpu().numpy())
-                    codes_final.append(codes)
-                    
-                    #print('bpp',compute_bpp(code, res.shape[0], 'crop', save=False))
-                    #sys.exit()
-                    for i in range(self.batch_size):
-                        img = np.squeeze(im[i].numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0)
-                        list_patches_recons[iters][i+batch*self.batch_size] = img
-                        
-               
-                    if self.op_bit_allocation:
-                        for i in range(self.batch_size):
-                            patch_test = np.squeeze(im[i].numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0)
-                            #patch_test=np.squeeze(im.numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0)
-                            patch_test = Image.fromarray(patch_test, mode='RGB')
-                            patch_ref  =  (patches[batch*batch_size+i]* 255.0).astype(np.uint8)
-                            patch_ref  = Image.fromarray(patch_ref, mode='RGB')
-                            result     =   calc_psnr(patch_ref,patch_test) 
-                            result= result/batch_size    
-                        if result>th:
-                            break
-                    qbits[iters] += 4*((self.height*self.width)**0.5)*(iters+1)*self.batch_size 
-    
-    
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
-                
                 for i in range(self.batch_size):
                     img = np.squeeze(im[i].numpy().clip(0, 1) * 255.0).astype(np.uint8).transpose(1, 2, 0)
                     list_patches_recons[i+batch*self.batch_size,:,:,:] = img
@@ -498,44 +369,8 @@ class Encoder_Decoder():
 
 
 def calc_mean(values, name):
-<<<<<<< HEAD
   print(name, str(np.mean(values)).replace('.',','))  
            
-
-=======
-    l,c = values.shape
-    print(name)
-    values_mean=[]
-    for y in range(c):
-        ls=[]
-        for x in range(l):
-            ls.append(values[x][y])
-        values_mean.append(str(np.mean(ls)).replace('.',','))
-        print(str(np.mean(ls)).replace('.',','))  
-    np.save(name,values_mean)  
-      
-
-
-k_priming = 0
-path='imagens_teste/'
-#path_model='/media/data/Datasets/samsung/modelos/rnn/cp4_mse_32iter/encoder_epoch_13.pth'
-path_model='/media/data/Datasets/samsung/modelos/rnn/cp4_3-priming/encoder_iter_510000.pth'
-
-path_destino = 'resultados'
-input_channels = 3
-size_patch=32
-
-height=size_patch
-width =size_patch
-cuda =1
-op_bit_allocation=False
-batch_size=4
-qiters=4
-threshold = np.arange(16, 41, 0.5)
-my_object = Manipulation_Images()
-filenames=glob.glob(path+'*12.bmp')
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
-
 my_object = Manipulation_Images()
 filenames = glob.glob(path_load)
 j=-1
@@ -559,7 +394,6 @@ for filename in filenames:
     list_patches      = torch.from_numpy(patches_transpose)
     
     my_object_ed = Encoder_Decoder(list_patches,path_model,path_destino, batch_size,op_bit_allocation, cuda,
-<<<<<<< HEAD
                                    qiters,target_psnr,height,width,h,w,min_iters,colorspace_input)
     
     list_patches_recons, bpp[j],bpp2[j] = my_object_ed.ed_process(my_object)
@@ -573,14 +407,4 @@ calc_mean(msssim, 'msssim')
 calc_mean(bpp, 'bpp nominal')
 calc_mean(bpp2, 'bpp after entropy coding')
 
-=======
-                                   qiters,threshold,height,width,h,w,k_priming)
-    
-    list_patches_recons,bpp[j][:]  = my_object_ed.ed_process(my_object)
-    psnr[j][:], ssim[j][:], msssim[j][:] = my_object_ed.resultados(list_patches_recons,img_original,my_object)
- 
-calc_mean(psnr,'psnr')
-calc_mean(ssim,'ssim')
-calc_mean(msssim,'ms-ssim')
-calc_mean(bpp,'bpp')
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
+
