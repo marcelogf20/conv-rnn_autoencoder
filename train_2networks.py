@@ -48,7 +48,6 @@ def transform_data(size_p):
     return train_transform
 
 
-
 def load_dataset2(train_transform, type_load):
     
     if type_load =='YCbCr':
@@ -71,21 +70,29 @@ def fuc_scheduler(solver, array_milestones,fator_gamma):
 
 def define_architecture():
     if cuda:
-        encoder = network.EncoderCell(3).cuda()
-        binarizer = network.Binarizer(32).cuda()
-        decoder = network.DecoderCell(32,3).cuda()
-        
+        encoder = network.EncoderCell(input_channels=1).cuda()
+        binarizer = network.Binarizer(bottleneck=28).cuda()
+        decoder = network.DecoderCell(bottleneck=28, output_channels=1).cuda()
 
-    return encoder,binarizer,decoder
+        encoder2 = network.EncoderCell(input_channels=2).cuda()
+        binarizer2 = network.Binarizer(bottleneck=4).cuda()
+        decoder2 = network.DecoderCell(bottleneck=4, output_channels=2).cuda()
+
+
+    return encoder,binarizer,decoder,encoder2,binarizer2,decoder2
 
 ## load networks on GPU
-def otimizador_func(encoder,binarizer,decoder):
+def otimizador_func(encoder,binarizer,decoder,encoder2,binarizer2,decoder2):
 
     if otimizador_op==Otimizador.adam:
-        solver = optim.Adam([ {'params': encoder.parameters()},
+        solver = optim.Adam([{'params': encoder.parameters()},
                              {'params': binarizer.parameters()},
                              {'params': decoder.parameters()},],lr=lr)
-                           
+
+        solver2 = optim.Adam([{'params': encoder2.parameters()},
+                             {'params': binarizer2.parameters()},
+                             {'params': decoder2.parameters()},],lr=lr)
+
 
     elif otimizador_op == Otimizador.radam:
         
@@ -93,7 +100,7 @@ def otimizador_func(encoder,binarizer,decoder):
                              {'params': binarizer.parameters()},
                              {'params': decoder.parameters()},],lr=lr)
 
-    return solver
+    return solver,solver2
 
 def resume(epoch=None):
     if epoch is None:
@@ -117,12 +124,11 @@ def save(index, epoch=True):
     torch.save(encoder.state_dict(),path_save+'/encoder_{}_{}.pth'.format(s, index))
     torch.save(binarizer.state_dict(),path_save+'/binarizer_{}_{}.pth'.format(s, index))
     torch.save(decoder.state_dict(), path_save+'/decoder_{}_{}.pth'.format(s, index))
-    #torch.save(solver.state_dict(), path_save+'/solver_{}_{}.pth'.format(s, index))
-    #torch.save(encoder2.state_dict(),path_save+'/encoder2_{}_{}.pth'.format(s, index))
-    #torch.save(binarizer2.state_dict(),path_save+'/binarizer2_{}_{}.pth'.format(s, index))
-    #torch.save(decoder2.state_dict(), path_save+'/decoder2_{}_{}.pth'.format(s, index))
-    #torch.save(solver.state_dict(), path_save+'/solver2_{}_{}.pth'.format(s, index))
-
+    torch.save(solver.state_dict(), path_save+'/solver_{}_{}.pth'.format(s, index))
+    torch.save(encoder2.state_dict(),path_save+'/encoder2_{}_{}.pth'.format(s, index))
+    torch.save(binarizer2.state_dict(),path_save+'/binarizer2_{}_{}.pth'.format(s, index))
+    torch.save(decoder2.state_dict(), path_save+'/decoder2_{}_{}.pth'.format(s, index))
+    torch.save(solver2.state_dict(), path_save+'/solver2_{}_{}.pth'.format(s, index))
 
 def compute_psnr(x, y):
     y = y.view(y.shape[0], -1)
@@ -131,44 +137,41 @@ def compute_psnr(x, y):
     psnr = torch.mean(20. * torch.log10(1. / rmse))
     return psnr 
 
+#path_save = './checkpoint/adam_mse_ycbcr_2networks'
+#train_path ='./database/database4'
 
- 
-
-
-path_load ='./checkpoint/ds4_adam_mae2_rgb'
-path_save = './checkpoint/teste'
+path_save = './checkpoint/ds4_adam_mse_ycbcr_2networks'
 train_path ='./database/database4'
 
 
-max_epochs = 2
-size_patch = 32
-batch_size = 32
 
-lr  = 1e-4
-iterations = 16
+max_epochs, size_patch,batch_size = 1, 32, 32
+lr,iterations  = 1e-4,  16
 scheduler_op  = False
-fator_gamma = 0.5
-n_batches_save = 800
+fator_gamma = 0.5 
+n_batches_save = 20000 
 
 otimizador_op = Otimizador.adam
-loss_op = Loss.mse_l1
-type_load ='RGB'
+loss_op = Loss.mse_ycbcr_two_networks
+type_load ='YCbCr'
+
 
 num_workers = 8
-cuda = True
+cuda =True
 train_transform = transform_data(size_patch);
 train_loader = load_dataset2(train_transform,type_load)
 
 print('Total de batches:',len(train_loader))
-encoder,binarizer,decoder = define_architecture()
-solver = otimizador_func(encoder,binarizer,decoder)
+encoder,binarizer,decoder,encoder2,binarizer2,decoder2 = define_architecture()
+solver,solver2 = otimizador_func(encoder,binarizer,decoder,encoder2,binarizer2,decoder2)
+
 
 op_target_quality = False
 data_aug = False
 loss_old = 1
 target_quality = 42
-last_epoch = 1
-checkpoint = 1
+last_epoch = 0
+checkpoint = 0
 
 if scheduler_op:
    scheduler=fuc_scheduler(solver,array_milestones,fator_gamma)
@@ -221,6 +224,25 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                                Variable(torch.zeros(batch_size, 128, height // 2, width // 2)).cuda())
 
 
+        encoder_h_1_2 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4).cuda()),
+                               Variable(torch.zeros(batch_size, 256, height // 4, width // 4)).cuda())
+        encoder_h_2_2 = (Variable(torch.zeros(batch_size, 512, height // 8, width // 8).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 8, width // 8)).cuda())
+        encoder_h_3_2 = (Variable(torch.zeros(batch_size, 512, height // 16, width // 16).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 16, width // 16)).cuda())
+
+        decoder_h_1_2 = (Variable(torch.zeros(batch_size, 512, height // 16, width // 16).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 16, width // 16)).cuda())
+        decoder_h_2_2 = (Variable(torch.zeros(batch_size, 512, height // 8, width // 8).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 8, width // 8)).cuda())
+        decoder_h_3_2 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4).cuda()),
+                               Variable(torch.zeros(batch_size, 256, height // 4, width // 4)).cuda())
+        decoder_h_4_2 = (Variable(torch.zeros(batch_size, 128, height // 2, width // 2).cuda()),
+                               Variable(torch.zeros(batch_size, 128, height // 2, width // 2)).cuda())
+
+
+
+        solver.zero_grad()
         losses = []
         mean_ssim = 0
         mean_msssim = 0
@@ -229,12 +251,14 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         losses = []
         losses1 = []
         losses2 = []
-        #print(patches.shape)
+
         patches = patches - 0.5
-        res = patches
+        res = torch.zeros(batch_size, 1, height, width,dtype=torch.float).cuda()
+        
+        res[:,0,:,:] = patches[:,0,:,:]
+        res2 = patches[:,1:,:,:]
         bp_t0 = time.time()
         g=1
-        #xt = torch.zeros(batch_size, input_channels, height, width,dtype=torch.float).cuda()
         
         masc=0
         for it in range(iterations):
@@ -242,23 +266,28 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(res, encoder_h_1, encoder_h_2, encoder_h_3) 
             codes = binarizer(encoded)
             output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(codes, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)       
-            #print('codes.shape',codes.shape,'res.shape',res.shape, 'res2.shape',res2.shape)
-                 
-                      
 
+            encoded2, encoder_h_1_2, encoder_h_2_2, encoder_h_3_2 = encoder2(res2, encoder_h_1_2, encoder_h_2_2, encoder_h_3_2) 
+            codes2 = binarizer2(encoded2)
+            output2, decoder_h_1_2, decoder_h_2_2, decoder_h_3_2, decoder_h_4_2 = decoder2(codes2, decoder_h_1_2, decoder_h_2_2, decoder_h_3_2, decoder_h_4_2)       
+                      
             #psnr = compute_psnr(x, xt)
             #ssim = pytorch_ssim.ssim(x,xt)
             #msssim =  MSSSIM(x,xt)
             #mse_residual   =   MSE(res, output)
-                               
+                                
             if loss_op == Loss.ssim_mse:
                 mse  = MSE(res, output)
                 ssim = pytorch_ssim.ssim(x,xt)
-                loss = (1 - ssim) + 0.5*mse   
-            
+
+                loss = (1 - ssim) + 0.5*mse
             elif loss_op == Loss.mse_ycbcr_two_networks:
                 mse  = MSE(res, output)
                 mse2  = MSE(res2, output2)
+                #print(res.shape)
+                #print(output.shape)
+                #print(res2.shape)
+                #print(output2.shape)
                 loss1 = mse
                 loss2 = mse2
                 loss = mse+mse2
@@ -266,16 +295,16 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             elif loss_op == Loss.mse_rgb:  
                 mse  = MSE(res, output)
                 loss =  mse
-            
+
             elif loss_op == Loss.mse_l1:
-                beta = 6e-8    
-                loss1  = MSE(res, output)
-                c = codes.clone()
-                c[c==-1.0] = 0
-                loss2 = torch.norm(c,p=1) *beta
-                loss = loss1 + loss2
-                if it==15:
-                    print('Número de uns',c[c==1].sum() )
+                beta = 0.01   
+                mse  = MSE(res, output)
+                codes[codes==-1] =0
+                l1_loss = torch.norm(codes,p=1)
+                print('beta*l1_loss', beta*l1_loss.data.item())
+                print('mse', mse.item())
+                loss = mse+l1_loss*beta
+
 
             elif loss_op == Loss.mae2_rgb:
                 loss = (res - output).abs().mean()**2
@@ -297,42 +326,37 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 mse_u  = (res[:,1,:,:] - output[:,1,:,:]).abs().mean()**2
                 mse_v  = (res[:,2,:,:] - output[:,2,:,:]).abs().mean()**2 
                 loss =  mse_y + 0.25*mse_u + 0.25*mse_v            
-            #if psnr>38 or masc==1:
-            #    losses=[]
-            #    for _ in range(it):
-            #        losses.append(torch.zeros(1,dtype=torch.float).cuda())                       
-            #    loss = torch.zeros(1,dtype=torch.float).cuda()
-            #    masc = 1
-            #    print('PSNR:',psnr.data.item())
-
-            mean_loss = mean_loss + (loss).data.item()/iterations
-            losses1.append(loss1)
-            losses2.append(loss2)
-            losses.append(loss)
-            res = res - output    
-           
-            
-        
-        #if losses1[-1] < 0.0008
-        #   loss_batch= sum(losses1)/iterations
-        #else:         
-        #   loss_batch= sum(losses)/iterations
-        solver.zero_grad()
-        loss_batch= sum(losses)/iterations
-        loss_batch.backward()
-        solver.step()
  
+            mean_loss += loss.data.item()/iterations
+            losses.append(loss)
+            losses1.append(loss1)
+
+            losses2.append(loss2)
+            res = res - output    
+            res2 = res2 - output2
+            
+        solver.zero_grad()
+        loss_batch= sum(losses1)/iterations
+        loss_batch.backward(retain_graph=True)
+        solver.step()
+
+        solver2.zero_grad()
+        loss_batch2= sum(losses2)/iterations
+        loss_batch2.backward()
+        solver2.step()
+
         bp_t1 = time.time()
         batch_t1 = time.time()
         index = (epoch - 1) * len(train_loader) + batch     
         loss_batches.append(mean_loss)
  
-        print('\n [TRAIN] Epoch[{}]({}/{}); Loss média: {:.4f}; Backpropagation: {:.4f} sec; Batch: {:.4f} sec'.format(epoch,batch + 1,len(train_loader), mean_loss, bp_t1 - bp_t0, batch_t1 - batch_t0))
-        #print(' SSIM: {:.4f} , MSSSIM: {:.4f}, PSNR: {:.4f}'.format(mean_ssim, mean_msssim, mean_psnr))
-        print(('Loss1 (MSE)'+' {:.4f} ' * iterations).format(* [l.data.item() for l in losses1]))
-        print(('Loss2 (Entropy)'+' {:.4f} ' * iterations).format(* [l.data.item() for l in losses2]))
 
-        print('loss1 média: {:.5f} loss2 média {:.5f}'.format( (sum(losses1)/iterations).data.item(), (sum(losses2)/iterations).data.item() ))
+        print('[TRAIN] Epoch[{}]({}/{}); Loss média: {:.4f}; Backpropagation: {:.4f} sec; Batch: {:.4f} sec'.format(epoch,batch + 1,len(train_loader), mean_loss, bp_t1 - bp_t0, batch_t1 - batch_t0))
+        print(('Loss1'+' {:.4f} ' * iterations).format(* [l.data.item() for l in losses1]))
+        print(('Loss2'+' {:.4f} ' * iterations).format(* [l.data.item() for l in losses2]))
+        print('loss média Y: {:.5f} loss média CbCr {:.5f}'.format( (sum(losses1)/iterations).data.item(), (sum(losses2)/iterations).data.item() ))
+
+
         if(index % n_batches_save ==0):   
             save(index,False)
 
@@ -343,3 +367,4 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
 
     #scheduler.step(loss_epochs[-1])
     
+
