@@ -17,7 +17,11 @@ import network
 import PIL
 from random import *
 import pytorch_msssim
+<<<<<<< HEAD
 from dataset import BSDS500Crop128, ImageFolderRGB,ImageFolderYCbCr
+=======
+from dataset import BSDS500Crop128
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 import pytorch_ssim
 from radam import RAdam
 
@@ -25,6 +29,7 @@ MSE = nn.MSELoss()
 #SSIM = pytorch_msssim.SSIM().cuda()
 #MSSSIM = pytorch_msssim.MSSSIM().cuda()
 
+<<<<<<< HEAD
 class HLoss(nn.Module):
     def __init__(self):
         super(HLoss, self).__init__()
@@ -36,6 +41,8 @@ class HLoss(nn.Module):
 
 criterion = HLoss()
 
+=======
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 
 class Otimizador():
     adam = 0
@@ -46,6 +53,7 @@ class Otimizador():
 class Loss():
     mse_rgb = 0
     mae = 1
+<<<<<<< HEAD
     ssim_mse = 2
     mse_ycbcr=3
     mae2_ycbcr =4
@@ -54,6 +62,11 @@ class Loss():
     mseRGB_patches =8
 
 
+=======
+    ssim_mse = 3
+    mse_ycbcr=4
+
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 def transform_data(size_p):       
     train_transform = transforms.Compose([
     transforms.RandomCrop((size_p, size_p)),
@@ -61,6 +74,7 @@ def transform_data(size_p):
     return train_transform
 
 
+<<<<<<< HEAD
 
 def load_dataset2(train_transform, type_load='RGB'):
     
@@ -70,23 +84,46 @@ def load_dataset2(train_transform, type_load='RGB'):
     if type_load =='RGB':
         train_dataset = ImageFolderRGB(root=train_path, transform=train_transform)
     
+=======
+def load_dataset(train_transform):
+    
+    train_dataset = BSDS500Crop128(train_path, train_transform)
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
     print(len(train_dataset))
     train_loader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,num_workers=num_workers,shuffle=True)
     
     return train_loader
+<<<<<<< HEAD
   
 def fuc_scheduler(solver, array_milestones,fator_gamma): 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(solver,mode='min',factor=0.4,patience=10,
           verbose=True)
+=======
+
+def load_dataset2(train_transform):
+    train_dataset = torchvision.datasets.ImageFolder(root=train_path, transform=train_transform)
+    train_loader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,num_workers=num_workers,shuffle=True)
+    return train_loader
+  
+def fuc_scheduler(solver, array_milestones,fator_gamma): 
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(solver,mode='min',factor=0.4,patience=10,
+          verbose=True,)
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
     return scheduler 
   
 
 
 def define_architecture():
     if cuda:
+<<<<<<< HEAD
         encoder = network.EncoderCell(3).cuda()
         binarizer = network.Binarizer(32).cuda()
         decoder = network.DecoderCell(32,3).cuda()
+=======
+        encoder = network.EncoderCell().cuda()
+        binarizer = network.Binarizer().cuda()
+        decoder = network.DecoderCell().cuda()
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 
     return encoder,binarizer,decoder
 
@@ -138,6 +175,7 @@ def compute_psnr(x, y):
     return psnr 
 
 
+<<<<<<< HEAD
  
 
 train_path ='/media/data/Datasets/samsung/database4'
@@ -169,6 +207,36 @@ num_workers = 8
 cuda =True
 train_transform = transform_data(size_patch);
 train_loader = load_dataset2(train_transform,type_load)
+=======
+batch_size = 32  
+train_path ='/media/data/Datasets/samsung/database4/dir0'
+path_save  = '/media/data/Datasets/samsung/modelos/rnn/mse_ycbcr'
+#path_load ='/media/data/Datasets/samsung/modelos/rnn/cp4_mse_32iter'
+
+data_aug = False
+num_workers = 5
+
+max_epochs = 2
+
+lr  = 1e-4
+cuda =True
+iterations = 16
+checkpoint = 0
+last_epoch = 0
+
+scheduler_op  = False
+fator_gamma = 0.5 
+n_batches_save = 15000 
+loss_old = 1
+
+otimizador_op = Otimizador.radam
+loss_op = Loss.mse_ycbcr 
+
+size_patch = 32
+
+train_transform = transform_data(size_patch);
+train_loader = load_dataset(train_transform)
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 
 print('Total de batches:',len(train_loader))
 encoder,binarizer,decoder = define_architecture()
@@ -189,6 +257,11 @@ if checkpoint:
     last_epoch = checkpoint
     #if scheduler_op:
      #   scheduler.last_epoch = last_epoch - 1
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 
 msssim_epochs=[]
 loss_epochs=[]
@@ -208,10 +281,34 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
     for batch, data in enumerate(train_loader):
 
         patches = Variable(data.cuda())
+<<<<<<< HEAD
+=======
+        #print('patches.size()',patches.size())
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 
         batch_size, input_channels, height, width = patches.size()
         batch_t0 = time.time()
         ## init lstm state
+<<<<<<< HEAD
+=======
+
+
+        encoder_h_1 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4).cuda()),
+                               Variable(torch.zeros(batch_size, 256, height // 4, width // 4)).cuda())
+        encoder_h_2 = (Variable(torch.zeros(batch_size, 512, height // 8, width // 8).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 8, width // 8)).cuda())
+        encoder_h_3 = (Variable(torch.zeros(batch_size, 512, height // 16, width // 16).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 16, width // 16)).cuda())
+
+        decoder_h_1 = (Variable(torch.zeros(batch_size, 512, height // 16, width // 16).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 16, width // 16)).cuda())
+        decoder_h_2 = (Variable(torch.zeros(batch_size, 512, height // 8, width // 8).cuda()),
+                               Variable(torch.zeros(batch_size, 512, height // 8, width // 8)).cuda())
+        decoder_h_3 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4).cuda()),
+                               Variable(torch.zeros(batch_size, 256, height // 4, width // 4)).cuda())
+        decoder_h_4 = (Variable(torch.zeros(batch_size, 128, height // 2, width // 2).cuda()),
+                               Variable(torch.zeros(batch_size, 128, height // 2, width // 2)).cuda())
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 
         encoder_h_1 = (Variable(torch.zeros(batch_size, 256, height // 4, width // 4).cuda()),
                                Variable(torch.zeros(batch_size, 256, height // 4, width // 4)).cuda())
@@ -250,6 +347,7 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             codes = binarizer(encoded)
             output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(codes, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)       
             xt = xt + output
+<<<<<<< HEAD
 
             #psnr = compute_psnr(x, xt)
             #ssim = pytorch_ssim.ssim(x,xt)
@@ -309,6 +407,33 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 mse_u  = (res[:,1,:,:] - output[:,1,:,:]).abs().mean()**2
                 mse_v  = (res[:,2,:,:] - output[:,2,:,:]).abs().mean()**2 
                 loss =  mse_y + 0.25*mse_u + 0.25*mse_v            
+=======
+
+            #psnr = compute_psnr(x, xt)
+            #ssim = pytorch_ssim.ssim(x,xt)
+            #msssim =  MSSSIM(x,xt)
+            #mse_residual   =   MSE(res, output)
+
+            if loss_op == Loss.ssim_mse:
+                mse_recons = MSE(x,xt,)
+                loss = (1 - ssim) + mse_recons/5                 
+            
+            elif loss_op == Loss.mse_rgb:
+                mse_recons = MSE(x,xt)
+                loss =  mse_recons
+                #(res - output).abs().mean()**2
+
+            elif loss_op == Loss.mae:
+                loss = (res - output).abs().mean()
+            
+            elif loss_op == Loss.mse_ycbcr:
+                mse_y  = MSE(res[:,0,:,:], output[:,0,:,:])
+                mse_u  = MSE(res[:,1,:,:], output[:,1,:,:])
+                mse_v  = MSE(res[:,2,:,:], output[:,2,:,:])
+                loss =  mse_y + 0.25*mse_u + 0.25*mse_v
+
+            
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
             #if psnr>38 or masc==1:
             #    losses=[]
             #    for _ in range(it):
@@ -321,6 +446,7 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             losses.append(loss)
             res = res - output
             
+<<<<<<< HEAD
         
         solver.zero_grad()
         loss_batch= sum(losses)/iterations
@@ -333,6 +459,11 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
          #   else:
          #       print('Batch com PSNR (dB) de: %.4f'%(psnr.data.item()))
         #else:
+=======
+    
+        solver.zero_grad()
+        loss_batch= sum(losses)/iterations
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
         loss_batch.backward()
         solver.step()
 
@@ -344,6 +475,7 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         print('[TRAIN] Epoch[{}]({}/{}); Loss média: {:.4f}; Backpropagation: {:.4f} sec; Batch: {:.4f} sec'.format(epoch,batch + 1,len(train_loader), mean_loss, bp_t1 - bp_t0, batch_t1 - batch_t0))
         #print(' SSIM: {:.4f} , MSSSIM: {:.4f}, PSNR: {:.4f}'.format(mean_ssim, mean_msssim, mean_psnr))
         print(('{:.4f} ' * iterations +'\n').format(* [l.data.item() for l in losses]))
+<<<<<<< HEAD
 
         if(index % n_batches_save ==0):   
             save(index,False)
@@ -355,3 +487,14 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
 
     #scheduler.step(loss_epochs[-1])
     
+=======
+
+        #if(index % n_batches_save ==0):   
+        #    save(index,False)
+
+    save(epoch)
+    loss_epochs.append(np.mean(loss_batches))
+    np.save('loss',loss_epochs)
+    #scheduler.step(loss_epochs[-1])
+    
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4

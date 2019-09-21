@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from modules import ConvLSTMCell, Sign
 
 
+
 class EncoderCell(nn.Module):
     def __init__(self,input_channels):
         super(EncoderCell, self).__init__()
@@ -135,12 +136,15 @@ class DecoderCell(nn.Module):
         return x, hidden1, hidden2, hidden3, hidden4
 
 
+<<<<<<< HEAD
 
 
 
 
 
 
+=======
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 class GainFactor(nn.Module):
     def __init__(self):
         super(GainFactor, self).__init__()
@@ -164,4 +168,8 @@ class GainFactor(nn.Module):
         g = F.elu(g)
         g=g+2
         return g
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
