@@ -98,10 +98,6 @@ class ImageFolderRGB(data.Dataset):
     def __len__(self):
         return len(self.imgs)
 
-<<<<<<< HEAD
-=======
-
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
 class BSDS500Crop128(data.Dataset):
     def __init__(self, folder_path,train_transform):
         self.files = sorted(glob.glob('%s/*.*' % folder_path))
@@ -110,7 +106,6 @@ class BSDS500Crop128(data.Dataset):
     def __getitem__(self, index):
         path = self.files[index % len(self.files)]
         img = Image.open(path)
-<<<<<<< HEAD
         ycbcr = img.convert('YCbCr')
         #ycbcr = np.array(ycbcr)
         ycbcr = self.train_transform(ycbcr)
@@ -122,12 +117,3 @@ class BSDS500Crop128(data.Dataset):
  
 
 
-=======
-        rgb = np.array(img, dtype=np.uint8)
-        yuv =  self.train_transform(yuv)
-
-        return yuv
-
-    def __len__(self):
-        return len(self.file)
->>>>>>> faf252d1a292b5c48a1de45f68064d177c46a3e4
