@@ -3,8 +3,8 @@
 num_img = '*'
 path_save = 'kodim'+str(num_img)+'_reconstruida.png'
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
-#path_model = '/media/data/Datasets/samsung/modelos/rnn/mse_rgb_adam_offeset08/encoder_epoch_1.pth'
-path_model = '/media/data/Datasets/samsung/modelos/rnn/adam_msergb_patches/encoder_epoch_1.pth'
+path_model = './checkpoint/ds4_adam_mae_rgb/encoder_epoch_1.pth'
+#path_model = './checkpoint/adam_mse_l1/encoder_epoch_1.pth'
 path_destino = 'resultados'
 
 offset = 0.5
@@ -13,7 +13,7 @@ size_patch = 32
 batch_size = 4
 target_psnr = 25
 min_iters = 1
-qiters = 16
+qiters = 18
 colorspace_input = 'RGB'
 height = size_patch
 width  = size_patch
@@ -38,7 +38,6 @@ from pathlib import PosixPath
 import pickle
 import network
 from skimage.util import view_as_blocks
-import matplotlib.pyplot as plt
 from img_common.msssim import compare_msssim
 from skimage.measure import compare_psnr, compare_ssim
 import glob,gzip
