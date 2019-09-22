@@ -117,12 +117,7 @@ def save(index, epoch=True):
     torch.save(encoder.state_dict(),path_save+'/encoder_{}_{}.pth'.format(s, index))
     torch.save(binarizer.state_dict(),path_save+'/binarizer_{}_{}.pth'.format(s, index))
     torch.save(decoder.state_dict(), path_save+'/decoder_{}_{}.pth'.format(s, index))
-    #torch.save(solver.state_dict(), path_save+'/solver_{}_{}.pth'.format(s, index))
-    #torch.save(encoder2.state_dict(),path_save+'/encoder2_{}_{}.pth'.format(s, index))
-    #torch.save(binarizer2.state_dict(),path_save+'/binarizer2_{}_{}.pth'.format(s, index))
-    #torch.save(decoder2.state_dict(), path_save+'/decoder2_{}_{}.pth'.format(s, index))
-    #torch.save(solver.state_dict(), path_save+'/solver2_{}_{}.pth'.format(s, index))
-
+    
 
 def compute_psnr(x, y):
     y = y.view(y.shape[0], -1)
@@ -132,23 +127,21 @@ def compute_psnr(x, y):
     return psnr 
 
 
- 
-
 
 path_load ='./checkpoint/ds4_adam_mae2_rgb'
-path_save = './checkpoint/teste'
+path_save = './checkpoint/adam_mse_l1_32iters'
 train_path ='./database/database4'
 
 
-max_epochs = 2
+max_epochs = 1
 size_patch = 32
 batch_size = 32
 
-lr  = 1e-4
-iterations = 16
+lr  = 5e-4
+iterations = 32
 scheduler_op  = False
 fator_gamma = 0.5
-n_batches_save = 800
+n_batches_save = 888800
 
 otimizador_op = Otimizador.adam
 loss_op = Loss.mse_l1
@@ -167,8 +160,8 @@ op_target_quality = False
 data_aug = False
 loss_old = 1
 target_quality = 42
-last_epoch = 1
-checkpoint = 1
+last_epoch = 0
+checkpoint = 0
 
 if scheduler_op:
    scheduler=fuc_scheduler(solver,array_milestones,fator_gamma)
@@ -268,14 +261,15 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 loss =  mse
             
             elif loss_op == Loss.mse_l1:
-                beta = 6e-8    
+                beta = 5.3e-8 
+                #beta_old = 2e-7   
                 loss1  = MSE(res, output)
                 c = codes.clone()
                 c[c==-1.0] = 0
                 loss2 = torch.norm(c,p=1) *beta
                 loss = loss1 + loss2
                 if it==15:
-                    print('Número de uns',c[c==1].sum() )
+                    print('Número de uns',c[c==1].sum().data.item())
 
             elif loss_op == Loss.mae2_rgb:
                 loss = (res - output).abs().mean()**2
@@ -329,8 +323,8 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
  
         print('\n [TRAIN] Epoch[{}]({}/{}); Loss média: {:.4f}; Backpropagation: {:.4f} sec; Batch: {:.4f} sec'.format(epoch,batch + 1,len(train_loader), mean_loss, bp_t1 - bp_t0, batch_t1 - batch_t0))
         #print(' SSIM: {:.4f} , MSSSIM: {:.4f}, PSNR: {:.4f}'.format(mean_ssim, mean_msssim, mean_psnr))
-        print(('Loss1 (MSE)'+' {:.4f} ' * iterations).format(* [l.data.item() for l in losses1]))
-        print(('Loss2 (Entropy)'+' {:.4f} ' * iterations).format(* [l.data.item() for l in losses2]))
+        print(('Loss1 (MSE)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses1]))
+        print(('Loss2 (Entropy)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses2]))
 
         print('loss1 média: {:.5f} loss2 média {:.5f}'.format( (sum(losses1)/iterations).data.item(), (sum(losses2)/iterations).data.item() ))
         if(index % n_batches_save ==0):   
