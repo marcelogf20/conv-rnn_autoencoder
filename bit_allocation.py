@@ -13,7 +13,10 @@ size_patch = 32
 batch_size = 4
 target_psnr = 25
 min_iters = 1
-qiters = 18
+
+num_max_iter = 18
+num_min_iter = num_max_iter
+
 colorspace_input = 'RGB'
 height = size_patch
 width  = size_patch
@@ -368,42 +371,67 @@ class Encoder_Decoder():
 
 
 def calc_mean(values, name):
-  print(name, str(np.mean(values)).replace('.',','))  
-           
+  return str(np.mean(values)).replace('.',',')
+
+def print_resultados(values):
+    for v in values:
+        print(v)
+
+
 my_object = Manipulation_Images()
 filenames = glob.glob(path_load)
-j=-1
-psnr = np.zeros(len(filenames))
-psnr_y = np.zeros(len(filenames))
-ssim = np.zeros(len(filenames))
-msssim = np.zeros(len(filenames))
-bpp = np.zeros(len(filenames))
-bpp2 = np.zeros(len(filenames))
 
+psnr_iter = []
+psnr_y_iter = []
+ssim_iter = []
+msssim_iter = []
+bpp_iter = []
+bpp2_iter = []
 
-for filename in filenames: 
-    j+=1 
-    print(filename)
-    img_original = my_object.load_image(filename, colorspace_input)
-    w,h,c= img_original.shape
-    patches = my_object.extract_img_patch(img_original,size_patch) 
-    patches = patches/255.0 
-    
-    patches_transpose = np.transpose(patches, (0,3,1,2))
-    list_patches      = torch.from_numpy(patches_transpose)
-    
-    my_object_ed = Encoder_Decoder(list_patches,path_model,path_destino, batch_size,op_bit_allocation, cuda,
-                                   qiters,target_psnr,height,width,h,w,min_iters,colorspace_input)
-    
-    list_patches_recons, bpp[j],bpp2[j] = my_object_ed.ed_process(my_object)
-    psnr[j],psnr_y[j], ssim[j], msssim[j] = my_object_ed.resultados(list_patches_recons,img_original,my_object,path_save,colorspace_input) 
-    print('Target PSNR %.2f dB. BPP nominal: %.4f, BPP entropy code: %.4f, PSNR (RGB): %.4fdB, PSNR Y: %.4f dB, SSIM: %.4f, MS-SSIM: %.4f'% (target_psnr,bpp[j],bpp2[j], psnr[j], psnr_y[j], ssim[j],msssim[j]))
+for qiters in range(num_min_iter, num_max_iter+1):
+    j=-1
+    psnr = np.zeros(len(filenames))
+    psnr_y = np.zeros(len(filenames))
+    ssim = np.zeros(len(filenames))
+    msssim = np.zeros(len(filenames))
+    bpp = np.zeros(len(filenames))
+    bpp2 = np.zeros(len(filenames))
+
+    for filename in filenames: 
+        j+=1 
+        print(filename)
+        img_original = my_object.load_image(filename, colorspace_input)
+        w,h,c= img_original.shape
+        patches = my_object.extract_img_patch(img_original,size_patch) 
+        patches = patches/255.0 
         
-calc_mean(psnr, 'psnr')
-calc_mean(psnr_y, 'psnr_y')
-calc_mean(ssim, 'ssim')
-calc_mean(msssim, 'msssim')
-calc_mean(bpp, 'bpp nominal')
-calc_mean(bpp2, 'bpp after entropy coding')
+        patches_transpose = np.transpose(patches, (0,3,1,2))
+        list_patches      = torch.from_numpy(patches_transpose)
+        
+        my_object_ed = Encoder_Decoder(list_patches,path_model,path_destino, batch_size,op_bit_allocation, cuda,
+                                       qiters,target_psnr,height,width,h,w,min_iters,colorspace_input)
+        
+        list_patches_recons, bpp[j],bpp2[j] = my_object_ed.ed_process(my_object)
+        psnr[j],psnr_y[j], ssim[j], msssim[j] = my_object_ed.resultados(list_patches_recons,img_original,my_object,path_save,colorspace_input) 
+        print('Target PSNR %.2f dB. BPP nominal: %.4f, BPP entropy code: %.4f, PSNR (RGB): %.4fdB, PSNR Y: %.4f dB, SSIM: %.4f, MS-SSIM: %.4f'% (target_psnr,bpp[j],bpp2[j], psnr[j], psnr_y[j], ssim[j],msssim[j]))
+            
+   psnr_iter.append(calc_mean(psnr))
+   psnr_y_iter.append(calc_mean(psnr_y))
+   ssim_iter.append(calc_mean(ssim))
+   msssim_iter.append(calc_mean(msssim))
+   bpp_iter.append(calc_mean(bpp))
+   bpp2_iter.append(calc_mean(bpp2))
+   
 
-
+print('PSNR:')
+print_resultados(psnr_iter)
+print('PSNR Y:')
+print_resultados(psnr_y_iter)
+print('SSIM:')
+print_resultados(ssim_iter)
+print('MS-SSIM:')
+print_resultado(msssim_iter)
+print('BPP:')
+print_resultados(bpp_iter)
+print('BPP - after entropy coding:')
+print_resultados(bpp2_iter)
