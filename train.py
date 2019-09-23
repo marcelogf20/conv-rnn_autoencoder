@@ -72,8 +72,8 @@ def fuc_scheduler(solver, array_milestones,fator_gamma):
 def define_architecture():
     if cuda:
         encoder = network.EncoderCell(3).cuda()
-        binarizer = network.Binarizer(32).cuda()
-        decoder = network.DecoderCell(32,3).cuda()
+        binarizer = network.Binarizer(44).cuda()
+        decoder = network.DecoderCell(44,3).cuda()
         
 
     return encoder,binarizer,decoder
@@ -129,8 +129,12 @@ def compute_psnr(x, y):
 
 
 path_load ='./checkpoint/ds4_adam_mae2_rgb'
-path_save = './checkpoint/adam_mse_l1_32iters'
-train_path ='./database/database4'
+#path_save = './checkpoint/adam_mse_l1_32iters'
+#train_path ='./database/database4'
+
+train_path ='/media/data/Datasets/samsung/database4'
+path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_bottleneck'
+
 
 
 max_epochs = 1
@@ -138,7 +142,7 @@ size_patch = 32
 batch_size = 32
 
 lr  = 5e-4
-iterations = 32
+iterations = 24
 scheduler_op  = False
 fator_gamma = 0.5
 n_batches_save = 888800
@@ -222,7 +226,8 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         losses = []
         losses1 = []
         losses2 = []
-        #print(patches.shape)
+        vetor_uns = []
+         #print(patches.shape)
         patches = patches - 0.5
         res = patches
         bp_t0 = time.time()
@@ -261,15 +266,14 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 loss =  mse
             
             elif loss_op == Loss.mse_l1:
-                beta = 5.3e-8 
+                beta = 3e-7/(0.5*it +0.5) 
                 #beta_old = 2e-7   
                 loss1  = MSE(res, output)
                 c = codes.clone()
                 c[c==-1.0] = 0
                 loss2 = torch.norm(c,p=1) *beta
                 loss = loss1 + loss2
-                if it==15:
-                    print('Número de uns',c[c==1].sum().data.item())
+                vetor_uns.append(c[c==1].sum().data.item())
 
             elif loss_op == Loss.mae2_rgb:
                 loss = (res - output).abs().mean()**2
@@ -325,8 +329,9 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         #print(' SSIM: {:.4f} , MSSSIM: {:.4f}, PSNR: {:.4f}'.format(mean_ssim, mean_msssim, mean_psnr))
         print(('Loss1 (MSE)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses1]))
         print(('Loss2 (Entropy)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses2]))
-
         print('loss1 média: {:.5f} loss2 média {:.5f}'.format( (sum(losses1)/iterations).data.item(), (sum(losses2)/iterations).data.item() ))
+        print(('Número de bits 1: ' +' {:.0f} ' * iterations).format(* [l for l in vetor_uns]))
+
         if(index % n_batches_save ==0):   
             save(index,False)
 
