@@ -19,9 +19,12 @@ from random import *
 from dataset import BSDS500Crop128, ImageFolderRGB,ImageFolderYCbCr
 import pytorch_ssim
 from radam import RAdam
+import math
 
 MSE = nn.MSELoss()
-#SSIM = pytorch_msssim.SSIM().cuda()
+#kl_div =nn.KLDivLoss()
+
+#SSIM = pytorch_msssim.SSIM()
 #MSSSIM = pytorch_msssim.MSSSIM().cuda()
 
 
@@ -29,18 +32,18 @@ class Otimizador():
     adam = 0
     rmsprob = 1
     sgd = 2
-    radam =3
+    radam = 3
 
 class Loss():
     mse_rgb = 0
     mae = 1
-    ssim_mse = 2
+    ssim = 2
     mse_ycbcr=3
     mae2_ycbcr =4
     mae2_rgb = 5
     mse_l1 = 6
     mse_ycbcr_two_networks =7
-
+    kl = 8
 def transform_data(size_p):       
     train_transform = transforms.Compose([
     transforms.RandomCrop((size_p, size_p)),
@@ -72,8 +75,8 @@ def fuc_scheduler(solver, array_milestones,fator_gamma):
 def define_architecture():
     if cuda:
         encoder = network.EncoderCell(3).cuda()
-        binarizer = network.Binarizer(44).cuda()
-        decoder = network.DecoderCell(44,3).cuda()
+        binarizer = network.Binarizer(32).cuda()
+        decoder = network.DecoderCell(32,3).cuda()
         
 
     return encoder,binarizer,decoder
@@ -127,14 +130,12 @@ def compute_psnr(x, y):
     return psnr 
 
 
+#train_path ='/media/data/Datasets/samsung/database4'
+#path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1'
 
 path_load ='./checkpoint/ds4_adam_mae2_rgb'
-#path_save = './checkpoint/adam_mse_l1_32iters'
-#train_path ='./database/database4'
-
-train_path ='/media/data/Datasets/samsung/database4'
-path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_bottleneck'
-
+path_save = './checkpoint/adam_mse_l1_beta2'
+train_path ='./database/database4'
 
 
 max_epochs = 1
@@ -142,7 +143,7 @@ size_patch = 32
 batch_size = 32
 
 lr  = 5e-4
-iterations = 24
+iterations = 28
 scheduler_op  = False
 fator_gamma = 0.5
 n_batches_save = 888800
@@ -151,7 +152,7 @@ otimizador_op = Otimizador.adam
 loss_op = Loss.mse_l1
 type_load ='RGB'
 
-num_workers = 8
+num_workers = 12
 cuda = True
 train_transform = transform_data(size_patch);
 train_loader = load_dataset2(train_transform,type_load)
@@ -227,36 +228,42 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
         losses1 = []
         losses2 = []
         vetor_uns = []
-         #print(patches.shape)
         patches = patches - 0.5
         res = patches
         bp_t0 = time.time()
-        g=1
-        #xt = torch.zeros(batch_size, input_channels, height, width,dtype=torch.float).cuda()
+        xt = torch.zeros(batch_size, input_channels, height, width,dtype=torch.float).cuda()
         
-        masc=0
+       # for _ in range(4):
+       #     encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(res, encoder_h_1, encoder_h_2, encoder_h_3) 
+       # codes = binarizer(encoded)
+       # for _ in range(4):
+       #      output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(codes, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)  
+
+        #loss = MSE(res,output)
+        #mean_loss = mean_loss + (loss).data.item()/iterations
+        #losses.append(loss) , res = res -output 
+
         for it in range(iterations):
             
             encoded, encoder_h_1, encoder_h_2, encoder_h_3 = encoder(res, encoder_h_1, encoder_h_2, encoder_h_3) 
             codes = binarizer(encoded)
             output, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4 = decoder(codes, decoder_h_1, decoder_h_2, decoder_h_3, decoder_h_4)       
-            #print('codes.shape',codes.shape,'res.shape',res.shape, 'res2.shape',res2.shape)
-                 
-                      
+            xt = xt+output  
 
-            #psnr = compute_psnr(x, xt)
+            #psnr = compute_psnr(patches+0.5, xt+0.5)
+            #print('PSNR:',psnr.data.item())
+
             #ssim = pytorch_ssim.ssim(x,xt)
             #msssim =  MSSSIM(x,xt)
-            #mse_residual   =   MSE(res, output)
-                               
-            if loss_op == Loss.ssim_mse:
-                mse  = MSE(res, output)
-                ssim = pytorch_ssim.ssim(x,xt)
-                loss = (1 - ssim) + 0.5*mse   
+
+            if loss_op == Loss.ssim:
+                ssim = pytorch_ssim.ssim(xt+0.5,patches+0.5)
+                loss = (1 - ssim)   
+
             
             elif loss_op == Loss.mse_ycbcr_two_networks:
                 mse  = MSE(res, output)
-                mse2  = MSE(res2, output2)
+                mse2  = MSE(re2, output2)
                 loss1 = mse
                 loss2 = mse2
                 loss = mse+mse2
@@ -266,12 +273,17 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 loss =  mse
             
             elif loss_op == Loss.mse_l1:
-                beta = 3e-7/(0.5*it +0.5) 
-                #beta_old = 2e-7   
-                loss1  = MSE(res, output)
+                #beta = 3e-7/(0.5*(it+1) +0.5) 
+                #beta_old2 = 2e-7
+                #beta_old  =5.3e-8
+                #beta = 8e-8
+                loss1  = MSE(res, output)             
                 c = codes.clone()
                 c[c==-1.0] = 0
-                loss2 = torch.norm(c,p=1) *beta
+                loss_l1 = torch.norm(c,p=1) 
+                beta = 3.5e-7*math.exp(-0.1*(it+1)) 
+
+                loss2 = beta*loss_l1
                 loss = loss1 + loss2
                 vetor_uns.append(c[c==1].sum().data.item())
 
@@ -289,7 +301,6 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 loss =  1.3*mse_y + 0.1*mse_u + 0.1*mse_v
 
 
-
             elif loss_op == Loss.mae2_ycbcr:
                 mse_y  = (res[:,0,:,:] - output[:,0,:,:]).abs().mean()**2
                 mse_u  = (res[:,1,:,:] - output[:,1,:,:]).abs().mean()**2
@@ -301,7 +312,8 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             #        losses.append(torch.zeros(1,dtype=torch.float).cuda())                       
             #    loss = torch.zeros(1,dtype=torch.float).cuda()
             #    masc = 1
-            #    print('PSNR:',psnr.data.item())
+            
+            #print('PSNR:',psnr.data.item())
 
             mean_loss = mean_loss + (loss).data.item()/iterations
             losses1.append(loss1)
@@ -310,11 +322,11 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
             res = res - output    
            
             
-        
         #if losses1[-1] < 0.0008
-        #   loss_batch= sum(losses1)/iterations
+        #   loss_batch = sum(losses1)/iterations
         #else:         
-        #   loss_batch= sum(losses)/iterations
+        #   loss_batch = sum(losses)/iterations
+
         solver.zero_grad()
         loss_batch= sum(losses)/iterations
         loss_batch.backward()
@@ -327,17 +339,21 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
  
         print('\n [TRAIN] Epoch[{}]({}/{}); Loss média: {:.4f}; Backpropagation: {:.4f} sec; Batch: {:.4f} sec'.format(epoch,batch + 1,len(train_loader), mean_loss, bp_t1 - bp_t0, batch_t1 - batch_t0))
         #print(' SSIM: {:.4f} , MSSSIM: {:.4f}, PSNR: {:.4f}'.format(mean_ssim, mean_msssim, mean_psnr))
-        print(('Loss1 (MSE)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses1]))
+        print(('Loss1 (L1)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses1]))
         print(('Loss2 (Entropy)'+' {:.5f} ' * iterations).format(* [l.data.item() for l in losses2]))
         print('loss1 média: {:.5f} loss2 média {:.5f}'.format( (sum(losses1)/iterations).data.item(), (sum(losses2)/iterations).data.item() ))
         print(('Número de bits 1: ' +' {:.0f} ' * iterations).format(* [l for l in vetor_uns]))
 
-        if(index % n_batches_save ==0):   
-            save(index,False)
+ #        if(index % n_batches_save ==0):   
+ #           save(index,False)
 
     save(epoch)
-    loss_epochs.append(np.mean(loss_batches))
-    np.save('loss',loss_epochs)
+ 
+
+
+
+    #loss_epochs.append(np.mean(loss_batches))
+    #np.save('loss',loss_epochs)
     #np.save('loss_batches',loss_e)
 
     #scheduler.step(loss_epochs[-1])
