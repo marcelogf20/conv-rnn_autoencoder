@@ -133,7 +133,7 @@ class DecoderCell(nn.Module):
         x = hidden4[0]
         x = F.pixel_shuffle(x, 2)
 
-        x = torch.tanh(self.conv2(x)) / 2
+        x = torch.tanh(self.conv2(x))/2
         return x, hidden1, hidden2, hidden3, hidden4
 
 
