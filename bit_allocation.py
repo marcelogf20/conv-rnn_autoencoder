@@ -1,20 +1,20 @@
-num_img = '02'
+num_img = '*'
 path_save = 'resultados/bit_allocation/mse_l1_1epoch/'
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
 #path_model  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1/encoder_epoch_1.pth'
-path_model = 'checkpoint/adam_mse_l1/encoder_epoch_1.pth'
+path_model = 'checkpoint/adam_mse_rgb/encoder_epoch_1.pth'
 
-op_save = False
-op_bit_allocation = False
+op_save = 0
+op_bit_allocation = 0
 
 offset = 0.5
 input_channels = 3
 
 size_patch = 32
-batch_size = 128
+batch_size = 64
 
-target_psnr = 27
-min_iters = 1
+target_psnr = 36.8
+min_iters = 13
 num_min_iter = 16
 num_max_iter = 16
 
@@ -314,7 +314,7 @@ class Encoder_Decoder():
                         result.append(calc_metric(patch_ref,patch_test,'psnr')) 
                     lower = min(result)
                     media = np.mean(result)
-                    if media>=th and lower>=th*0.94:
+                    if media>=th and lower>=th*0.97:
                         print('iteração',iters+1,'PSNR médio', media)
                         break
 
@@ -426,12 +426,16 @@ for qiters in range(num_min_iter, num_max_iter+1):
    
 
 print('PSNR')
+#print(psnr_iter)
 print_resultados(psnr_iter)
 print('PSNR Y')
+#print(psnr_y_iter)
 print_resultados(psnr_y_iter)
 print('SSIM')
+#print(ssim_iter)
 print_resultados(ssim_iter)
 print('MS-SSIM')
+#print(msssim_iter)
 print_resultados(msssim_iter)
 print('BPP')
 print_resultados(bpp_iter)
