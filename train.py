@@ -65,8 +65,8 @@ def load_dataset2(train_transform, type_load):
     
     return train_loader
   
-def fuc_scheduler(solver, array_milestones,fator_gamma): 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(solver,mode='min',factor=0.4,patience=10,
+def fuc_scheduler(solver, patience,fator_gamma): 
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(solver,mode='min',factor=fator_gamma,patience=patience,
           verbose=True)
     return scheduler 
   
@@ -131,20 +131,22 @@ def compute_psnr(x, y):
 
 
 #train_path ='/media/data/Datasets/samsung/database4'
+#train_path ='./database/database4'
 #path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1'
+#path_load ='./checkpoint/ds4_adam_mae2_rgb'
 
-path_load ='./checkpoint/ds4_adam_mae2_rgb'
-path_save = './checkpoint/mse_l1_cenario17'
-train_path ='./database/database4'
+path_save = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis'
+train_path ='/home/all-image-datasets/database_patches32x32_he'
 
 
-max_epochs = 1
+
+max_epochs = 5
 size_patch = 32
 batch_size = 32
 
 lr  = 5e-4
 iterations = 28
-scheduler_op  = False
+scheduler_op  = True
 fator_gamma = 0.5
 n_batches_save = 888800
 
@@ -167,9 +169,11 @@ loss_old = 1
 target_quality = 42
 last_epoch = 0
 checkpoint = 0
+patience = 1
+fator_gamma = 0.5
 
 if scheduler_op:
-   scheduler=fuc_scheduler(solver,array_milestones,fator_gamma)
+   scheduler=fuc_scheduler(solver,patience,fator_gamma)
 
 if checkpoint:
     resume(checkpoint)
@@ -281,7 +285,7 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 c = codes.clone()
                 c[c==-1.0] = 0
                 loss_l1 = torch.norm(c,p=1) 
-                beta = 3.5e-7*math.exp(-0.05*(it+1)) 
+                beta = 3.5e-7*math.exp(-0.1*(it+1)) 
 
                 loss2 = beta*loss_l1
                 loss = loss1 + loss2
@@ -348,13 +352,7 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
  #           save(index,False)
 
     save(epoch)
- 
-
-
-
-    #loss_epochs.append(np.mean(loss_batches))
-    #np.save('loss',loss_epochs)
-    #np.save('loss_batches',loss_e)
-
-    #scheduler.step(loss_epochs[-1])
+    loss_epochs.append(np.mean(loss_batches))
+    np.save('loss',loss_epochs)
+    scheduler.step(np.mean(loss_batches))
     
