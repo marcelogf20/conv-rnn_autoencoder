@@ -2,21 +2,21 @@ num_img = '*'
 path_save = 'resultados/bit_allocation/mse_l1_1epoch/'
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
 #path_model  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1/encoder_epoch_1.pth'
-path_model = 'checkpoint/mse_l1_cenario13/encoder_epoch_1.pth'
+path_model = 'checkpoint/mse_l1_cenario17/encoder_epoch_1.pth'
 
 op_save = 0
-op_bit_allocation = 1
+op_bit_allocation = 0
 
 offset = 0.5
 input_channels = 3
 
 size_patch = 32
-batch_size = 4
+batch_size = 64
 
 target_psnr = 36.8
 min_iters = 1
-num_min_iter = 1
-num_max_iter = 16
+num_min_iter = 22
+num_max_iter = 22
 
 colorspace_input = 'RGB'
 height = size_patch
@@ -315,7 +315,7 @@ class Encoder_Decoder():
                     lower = min(result)
                     media = np.mean(result)
                     if media>=th and lower>=th*0.97:
-                       # print('iteração',iters+1,'PSNR médio', media)
+                        print('iteração',iters+1,'PSNR médio', media)
                         break
 
             if not self.op_bit_allocation:
@@ -388,12 +388,12 @@ ssim_iter = []
 msssim_iter = []
 bpp_iter = []
 bpp2_iter = []
-target_psnr = 21
-num_max_iter =17
-for q in range(num_min_iter, num_max_iter+1):
+
+for qiters in range(num_min_iter, num_max_iter+1):
     j=-1
-    target_psnr+=1 
-    qiters = 25
+    if  qiters==18:
+        batch_size = 64
+   
     psnr = np.zeros(len(filenames))
     psnr_y = np.zeros(len(filenames))
     ssim = np.zeros(len(filenames))
@@ -405,7 +405,7 @@ for q in range(num_min_iter, num_max_iter+1):
         j+=1 
         name_img = (filename.split('/')[1]).split('.')[0]
         img_original = my_object.load_image(filename, colorspace_input)
-        w,h,c   = img_original.shape
+        w,h,c= img_original.shape
         patches = my_object.extract_img_patch(img_original,size_patch) 
         patches = patches/255.0 
         

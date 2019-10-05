@@ -134,7 +134,7 @@ def compute_psnr(x, y):
 #path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1'
 
 path_load ='./checkpoint/ds4_adam_mae2_rgb'
-path_save = './checkpoint/adam_mse_l1_beta2'
+path_save = './checkpoint/mse_l1_cenario17'
 train_path ='./database/database4'
 
 
@@ -281,7 +281,7 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
                 c = codes.clone()
                 c[c==-1.0] = 0
                 loss_l1 = torch.norm(c,p=1) 
-                beta = 3.5e-7*math.exp(-0.1*(it+1)) 
+                beta = 3.5e-7*math.exp(-0.05*(it+1)) 
 
                 loss2 = beta*loss_l1
                 loss = loss1 + loss2
