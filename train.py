@@ -107,7 +107,7 @@ def resume(epoch=None):
     encoder.load_state_dict(torch.load(path_load+'/encoder_{}_{}.pth'.format(s, epoch)))
     binarizer.load_state_dict(torch.load(path_load+'/binarizer_{}_{}.pth'.format(s, epoch)))
     decoder.load_state_dict(torch.load(path_load+'/decoder_{}_{}.pth'.format(s, epoch)))
-    solver.load_state_dict(torch.load(path_load+'/solver_{}_{}.pth'.format(s, epoch)))
+   #solver.load_state_dict(torch.load(path_load+'/solver_{}_{}.pth'.format(s, epoch)))
 
 
 def save(index, epoch=True):
@@ -120,6 +120,7 @@ def save(index, epoch=True):
     torch.save(encoder.state_dict(),path_save+'/encoder_{}_{}.pth'.format(s, index))
     torch.save(binarizer.state_dict(),path_save+'/binarizer_{}_{}.pth'.format(s, index))
     torch.save(decoder.state_dict(), path_save+'/decoder_{}_{}.pth'.format(s, index))
+    torch.save(solver.state_dict(), path_save+'/solver_{}_{}.pth'.format(s, index))
     
 
 def compute_psnr(x, y):
@@ -133,14 +134,14 @@ def compute_psnr(x, y):
 #train_path ='/media/data/Datasets/samsung/database4'
 #train_path ='./database/database4'
 #path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1'
-#path_load ='./checkpoint/ds4_adam_mae2_rgb'
 
+path_load = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis'
 path_save = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis'
-train_path ='/home/all-image-datasets/database_patches32x32_he'
+train_path ='./dataset/database_patches32x32_he'
 
 
 
-max_epochs = 5
+max_epochs = 15
 size_patch = 32
 batch_size = 32
 
@@ -167,8 +168,8 @@ op_target_quality = False
 data_aug = False
 loss_old = 1
 target_quality = 42
-last_epoch = 0
-checkpoint = 0
+last_epoch = 5
+checkpoint = 5
 patience = 1
 fator_gamma = 0.5
 

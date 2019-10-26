@@ -2,7 +2,7 @@ num_img = '*'
 path_save = 'resultados/bit_allocation/mse_l1_1epoch/'
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
 #path_model  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1/encoder_epoch_1.pth'
-path_model = 'checkpoint/mse_l1_cenario17/encoder_epoch_1.pth'
+path_model = 'checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis/encoder_epoch_8.pth'
 
 op_save = 0
 op_bit_allocation = 0
@@ -11,12 +11,12 @@ offset = 0.5
 input_channels = 3
 
 size_patch = 32
-batch_size = 64
+batch_size = 32
 
 target_psnr = 36.8
 min_iters = 1
-num_min_iter = 22
-num_max_iter = 22
+num_min_iter = 20
+num_max_iter = 21
 
 colorspace_input = 'RGB'
 height = size_patch
@@ -392,7 +392,7 @@ bpp2_iter = []
 for qiters in range(num_min_iter, num_max_iter+1):
     j=-1
     if  qiters==18:
-        batch_size = 64
+        batch_size = 32
    
     psnr = np.zeros(len(filenames))
     psnr_y = np.zeros(len(filenames))
