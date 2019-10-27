@@ -1,7 +1,5 @@
-
-
 num_img = '*'
-epoch = '8'
+epoch = '9'
 path_save = 'resultados/bit_allocation/mse_l1_'+epoch+'epoch/'
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
 #path_model  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1/encoder_epoch_1.pth'
@@ -18,7 +16,7 @@ batch_size = 32
 
 target_psnr = 36.8
 min_iters = 1
-num_min_iter = 20
+num_min_iter = 1
 num_max_iter = 21
 
 colorspace_input = 'RGB'
@@ -376,7 +374,7 @@ class Encoder_Decoder():
 
 
 def calc_mean(values):
-    return str(np.mean(values)).replace('.',',')
+    return np.mean(values)
 
 def print_resultados(values):
     for v in values:
@@ -412,9 +410,11 @@ for qiters in range(num_min_iter, num_max_iter+1):
 
         try:
             df = pd.read_csv(path_save+name_img+'_epoch'+str(epoch)+'.csv')
+            print('try open')
         except:
-            dados = {'name_img':[] ,'nivel':[], 'bpp_nominal':[], 'bpp_real':[], 'psnr':[], 'psnr_y':[], 'ssim':[], 'ms-ssim':[]}
-            df = pd.DataFrame(dados,columns=['name_img','nivel','bpp_nominal','bpp_real', 'psnr','psnr_y','ssim','ms-ssim'],dtype=float)
+            print('new df')
+            dados = {'name_img':[] ,'nivel':[], 'bpp_nominal':[], 'bpp_real':[], 'psnr':[], 'psnr_y':[], 'ssim':[], 'ms-ssim':[],'ganho_bpp':[]}
+            df = pd.DataFrame(dados,columns=['name_img','nivel','bpp_nominal','bpp_real', 'psnr','psnr_y','ssim','ms-ssim','ganho_bpp'],dtype=float)
 
 
         img_original = my_object.load_image(filename, colorspace_input)
@@ -432,7 +432,8 @@ for qiters in range(num_min_iter, num_max_iter+1):
         psnr[j],psnr_y[j], ssim[j], msssim[j] = my_object_ed.resultados(list_patches_recons,img_original,my_object,path_save,colorspace_input,name_img,op_save)         
         
         print('Image: %s, Target PSNR %.2f dB. BPP nominal: %.4f, BPP entropy code: %.4f, PSNR (RGB): %.4fdB, PSNR Y: %.4f dB, SSIM: %.4f, MS-SSIM: %.4f'% (name_img,target_psnr,bpp[j],bpp2[j], psnr[j], psnr_y[j], ssim[j],msssim[j]))
-        df= df.append(pd.Series([name_img, qiters, bpp[j],bpp2[j],psnr[j],psnr_y[j],ssim[j],msssim[j]], index=df.columns ), ignore_index=True)
+        g = (bpp[j]-bpp2[j])*100/bpp[j]
+        df= df.append(pd.Series([name_img, qiters, bpp[j],bpp2[j],psnr[j],psnr_y[j],ssim[j],msssim[j],g], index=df.columns ), ignore_index=True)
         df.to_csv(path_save+name_img+'_epoch'+str(epoch)+'.csv',index=False)
 
     psnr_iter.append(calc_mean(psnr))
@@ -459,7 +460,11 @@ print('BPP')
 print_resultados(bpp_iter)
 print('BPP Real')
 print_resultados(bpp2_iter)
-
-dados = {'bpp_nominal':[bpp_iter], 'bpp_real':[bpp2_iter], 'psnr':[psnr_iter], 'psnr_y':[psnr_y_iter], 'ssim':[ssim_iter], 'ms-ssim':[msssim_iter]}
-df = pd.DataFrame(dados,columns=['bpp_nominal','bpp_real', 'psnr','psnr_y','ssim','ms-ssim'],dtype=float)
-df.to_csv(path_save'media_por_nivel_epoch'+str(epoch)+'.csv',index=False)
+g = []
+for  b, b2 in zip(bpp_iter, bpp2_iter):
+    g.append((b-b2)*100/b)
+print(len(g))
+print(len(bpp_iter))
+dados = {'bpp_nominal':np.asarray(bpp_iter), 'bpp_real':np.asarray(bpp2_iter), 'psnr':np.asarray(psnr_iter), 'psnr_y':np.asarray(psnr_y_iter), 'ssim':np.asarray(ssim_iter), 'ms-ssim':np.asarray(msssim_iter),'ganho_bpp':np.asarray(g)}
+df = pd.DataFrame(dados,columns=['bpp_nominal','bpp_real', 'psnr','psnr_y','ssim','ms-ssim','ganho_bpp'],dtype=float)
+df.to_csv(path_save+'media_por_nivel_epoch'+str(epoch)+'.csv',index=False)
