@@ -1,8 +1,11 @@
+
+
 num_img = '*'
-path_save = 'resultados/bit_allocation/mse_l1_1epoch/'
+epoch = '8'
+path_save = 'resultados/bit_allocation/mse_l1_'+epoch+'epoch/'
 path_load = 'imagens_teste/kodim'+str(num_img)+'.bmp'
 #path_model  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1/encoder_epoch_1.pth'
-path_model = 'checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis/encoder_epoch_8.pth'
+path_model = 'checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis/encoder_epoch_'+epoch+'.pth'
 
 op_save = 0
 op_bit_allocation = 0
@@ -36,6 +39,7 @@ import torchvision.transforms as transforms
 import dataset
 import PIL
 import sys
+import pandas as pd
 from PIL import Image
 from pathlib import PosixPath
 import pickle
@@ -400,10 +404,19 @@ for qiters in range(num_min_iter, num_max_iter+1):
     msssim = np.zeros(len(filenames))
     bpp = np.zeros(len(filenames))
     bpp2 = np.zeros(len(filenames))
-
+    
+    
     for filename in filenames: 
         j+=1 
         name_img = (filename.split('/')[1]).split('.')[0]
+
+        try:
+            df = pd.read_csv(path_save+name_img+'_epoch'+str(epoch)+'.csv')
+        except:
+            dados = {'name_img':[] ,'nivel':[], 'bpp_nominal':[], 'bpp_real':[], 'psnr':[], 'psnr_y':[], 'ssim':[], 'ms-ssim':[]}
+            df = pd.DataFrame(dados,columns=['name_img','nivel','bpp_nominal','bpp_real', 'psnr','psnr_y','ssim','ms-ssim'],dtype=float)
+
+
         img_original = my_object.load_image(filename, colorspace_input)
         w,h,c= img_original.shape
         patches = my_object.extract_img_patch(img_original,size_patch) 
@@ -416,10 +429,12 @@ for qiters in range(num_min_iter, num_max_iter+1):
                                        qiters,target_psnr,height,width,h,w,min_iters,colorspace_input)
         
         list_patches_recons, bpp[j],bpp2[j] = my_object_ed.ed_process(my_object)
-        psnr[j],psnr_y[j], ssim[j], msssim[j] = my_object_ed.resultados(list_patches_recons,img_original,my_object,path_save,colorspace_input,name_img,op_save) 
+        psnr[j],psnr_y[j], ssim[j], msssim[j] = my_object_ed.resultados(list_patches_recons,img_original,my_object,path_save,colorspace_input,name_img,op_save)         
+        
         print('Image: %s, Target PSNR %.2f dB. BPP nominal: %.4f, BPP entropy code: %.4f, PSNR (RGB): %.4fdB, PSNR Y: %.4f dB, SSIM: %.4f, MS-SSIM: %.4f'% (name_img,target_psnr,bpp[j],bpp2[j], psnr[j], psnr_y[j], ssim[j],msssim[j]))
+        df= df.append(pd.Series([name_img, qiters, bpp[j],bpp2[j],psnr[j],psnr_y[j],ssim[j],msssim[j]], index=df.columns ), ignore_index=True)
+        df.to_csv(path_save+name_img+'_epoch'+str(epoch)+'.csv',index=False)
 
-         
     psnr_iter.append(calc_mean(psnr))
     psnr_y_iter.append(calc_mean(psnr_y))
     ssim_iter.append(calc_mean(ssim))
@@ -444,3 +459,7 @@ print('BPP')
 print_resultados(bpp_iter)
 print('BPP Real')
 print_resultados(bpp2_iter)
+
+dados = {'bpp_nominal':[bpp_iter], 'bpp_real':[bpp2_iter], 'psnr':[psnr_iter], 'psnr_y':[psnr_y_iter], 'ssim':[ssim_iter], 'ms-ssim':[msssim_iter]}
+df = pd.DataFrame(dados,columns=['bpp_nominal','bpp_real', 'psnr','psnr_y','ssim','ms-ssim'],dtype=float)
+df.to_csv(path_save'media_por_nivel_epoch'+str(epoch)+'.csv',index=False)
