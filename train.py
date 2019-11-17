@@ -20,9 +20,13 @@ from dataset import BSDS500Crop128, ImageFolderRGB,ImageFolderYCbCr
 import pytorch_ssim
 from radam import RAdam
 import math
-
+torch.cuda.get_device_name(1)
 MSE = nn.MSELoss()
 #kl_div =nn.KLDivLoss()
+CUDA_VISIBLE_DEVICES=1
+torch.cuda.set_device(1)
+
+print(torch.cuda.current_device())
 
 #SSIM = pytorch_msssim.SSIM()
 #MSSSIM = pytorch_msssim.MSSSIM().cuda()
@@ -107,7 +111,7 @@ def resume(epoch=None):
     encoder.load_state_dict(torch.load(path_load+'/encoder_{}_{}.pth'.format(s, epoch)))
     binarizer.load_state_dict(torch.load(path_load+'/binarizer_{}_{}.pth'.format(s, epoch)))
     decoder.load_state_dict(torch.load(path_load+'/decoder_{}_{}.pth'.format(s, epoch)))
-   #solver.load_state_dict(torch.load(path_load+'/solver_{}_{}.pth'.format(s, epoch)))
+    solver.load_state_dict(torch.load(path_load+'/solver_{}_{}.pth'.format(s, epoch)))
 
 
 def save(index, epoch=True):
@@ -135,17 +139,20 @@ def compute_psnr(x, y):
 #train_path ='./database/database4'
 #path_save  = '/media/data/Datasets/samsung/modelos/rnn/adam_mse_l1_beta1'
 
-path_load = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis'
-path_save = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis'
+#path_load = './checkpoint/mse_l1_ds_Marcelo_lambda_6_10-7_exp-0.07Nivel_28niveis_latente2_2_46'
+#path_save = './checkpoint/mse_l1_ds_Marcelo_lambda_6_10-7_exp-0.07Nivel_28niveis_latente2_2_46'
+
+path_load = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis/'
+path_save = './checkpoint/mse_l1_ds_Marcelo_lambda_-0.01Nivel_28niveis/'
 train_path ='./dataset/database_patches32x32_he'
 
+max_epochs = 30
 
-
-max_epochs = 15
 size_patch = 32
 batch_size = 32
 
 lr  = 5e-4
+lr = 1e-4
 iterations = 28
 scheduler_op  = True
 fator_gamma = 0.5
@@ -168,8 +175,8 @@ op_target_quality = False
 data_aug = False
 loss_old = 1
 target_quality = 42
-last_epoch = 5
-checkpoint = 5
+last_epoch = 0
+checkpoint = 20
 patience = 1
 fator_gamma = 0.5
 
@@ -186,6 +193,7 @@ msssim_epochs=[]
 loss_epochs=[]
 ssim_epochs=[]
 psnr_epochs=[]
+
 
 for epoch in range(last_epoch + 1, max_epochs + 1):
     print('época: ',epoch)
@@ -354,6 +362,6 @@ for epoch in range(last_epoch + 1, max_epochs + 1):
 
     save(epoch)
     loss_epochs.append(np.mean(loss_batches))
-    np.save('loss',loss_epochs)
+    np.save('loss_epoch21a30',loss_epochs)
     scheduler.step(np.mean(loss_batches))
     
